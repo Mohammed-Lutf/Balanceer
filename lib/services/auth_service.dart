@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../models/expense_model.dart';
+import '../models/budget_model.dart';
 import 'connectivity_service.dart';
 import 'local_storage_service.dart';
 import 'supabase_service.dart';
@@ -49,6 +51,9 @@ class AuthService {
         await _secureStorage.write(key: 'email', value: email);
         await _secureStorage.write(key: 'password', value: password);
         
+        // Migrate guest data if exists
+        await migrateGuestDataToAccount(response.user!.id);
+        
         return AuthResult.success(response.user!);
       }
       
@@ -79,6 +84,9 @@ class AuthService {
           
           await _secureStorage.write(key: 'email', value: email);
           await _secureStorage.write(key: 'password', value: password);
+          
+          // Migrate guest data if exists
+          await migrateGuestDataToAccount(response.user!.id);
           
           return AuthResult.success(response.user!);
         }
@@ -153,6 +161,9 @@ class AuthService {
           name: response.user!.userMetadata?['full_name'] ?? 'User'
         );
         
+        // Migrate guest data if exists
+        await migrateGuestDataToAccount(response.user!.id);
+        
         return AuthResult.success(response.user!);
       }
 
@@ -181,6 +192,83 @@ class AuthService {
     await _secureStorage.write(key: 'is_guest', value: 'true');
     
     return AuthResult.guest(guestId);
+  }
+  
+  /// Check if current session is a guest session
+  Future<bool> isGuestSession() async {
+    return await _secureStorage.read(key: 'is_guest') == 'true';
+  }
+  
+  /// Get guest user ID if exists
+  Future<String?> getGuestUserId() async {
+    final session = await _localStorage.getUserSession();
+    final userId = session?['user_id'] as String?;
+    if (userId != null && userId.startsWith('guest_')) {
+      return userId;
+    }
+    return null;
+  }
+  
+  /// Migrate guest data to a new authenticated account
+  /// Call this after successful login/signup when user was previously a guest
+  Future<void> migrateGuestDataToAccount(String newUserId) async {
+    final guestId = await getGuestUserId();
+    if (guestId == null) return;
+    
+    try {
+      // Get current month for budgets
+      final now = DateTime.now();
+      
+      // Get all guest expenses
+      final expenses = await _localStorage.getExpenses(guestId);
+      
+      // Get all guest budgets for current month
+      final budgets = await _localStorage.getBudgets(guestId, now.month, now.year);
+      
+      // Update expenses with new user ID and mark as unsynced
+      for (final expense in expenses) {
+        final updatedExpense = ExpenseModel(
+          id: expense.id,
+          userId: newUserId,
+          category: expense.category,
+          amount: expense.amount,
+          notes: expense.notes,
+          expenseDate: expense.expenseDate,
+          createdAt: expense.createdAt,
+          isSynced: false,
+        );
+        await _localStorage.insertExpense(updatedExpense);
+      }
+      
+      // Update budgets with new user ID and mark as unsynced
+      for (final budget in budgets) {
+        final updatedBudget = BudgetModel(
+          id: budget.id,
+          userId: newUserId,
+          category: budget.category,
+          amount: budget.amount,
+          month: budget.month,
+          year: budget.year,
+          createdAt: budget.createdAt,
+          isSynced: false,
+        );
+        await _localStorage.insertBudget(updatedBudget);
+      }
+      
+      // Delete old guest data
+      for (final expense in expenses) {
+        if (expense.userId == guestId) {
+          await _localStorage.deleteExpense(expense.id);
+        }
+      }
+      
+      // Clear guest flag
+      await _secureStorage.delete(key: 'is_guest');
+      
+    } catch (e) {
+      // Log error but don't fail the login process
+      print('Error migrating guest data: $e');
+    }
   }
 
   

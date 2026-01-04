@@ -43,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   AppCurrency _currency = AppCurrency.sar;
 
 
+  bool _isGuest = false;
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       supabase: _supabase,
     );
     
+    _isGuest = await _authService.isGuestSession();
     _userId = await _authService.getUserId();
     
     // Load currency
@@ -719,8 +722,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             _buildSettingItem(
               icon: Iconsax.user,
               title: 'الحساب',
-              subtitle: _authService.currentUser?.email ?? 'زائر',
-              onTap: () {},
+              subtitle: _isGuest ? 'زائر - اضغط للتسجيل' : (_authService.currentUser?.email ?? 'مستخدم'),
+              onTap: _isGuest ? _navigateToLogin : () {},
             ),
             
             // Guest Mode Warning
@@ -954,6 +957,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   
+  void _navigateToLogin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
   @override
   void dispose() {
     _connectivity.dispose();
