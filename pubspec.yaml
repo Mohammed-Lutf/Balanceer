@@ -1,0 +1,64 @@
+name: youth_budget_manager
+description: "تطبيق إدارة ميزانية الشباب - Youth Budget Manager"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Supabase
+  supabase_flutter: ^2.8.0
+  google_sign_in: ^6.2.1
+  
+  # Local Storage
+  sqflite: ^2.4.1
+  path_provider: ^2.1.5
+  shared_preferences: ^2.3.4
+  flutter_secure_storage: ^9.2.2
+  
+  # Connectivity
+  connectivity_plus: ^6.1.1
+  
+  # Charts
+  fl_chart: ^0.69.2
+  
+  # State Management
+  provider: ^6.1.2
+  
+  # UI Components
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.2
+  shimmer: ^3.0.0
+  
+  # Icons
+  cupertino_icons: ^1.0.8
+  iconsax: ^0.0.8
+  
+  # Utils
+  intl: ^0.19.0
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+
+  # fonts:
+  #   - family: Cairo
+  #     fonts:
+  #       - asset: assets/fonts/Cairo-Regular.ttf
+  #       - asset: assets/fonts/Cairo-Bold.ttf
+  #         weight: 700
+  #       - asset: assets/fonts/Cairo-SemiBold.ttf
+  #         weight: 600

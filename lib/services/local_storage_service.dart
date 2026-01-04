@@ -1,0 +1,260 @@
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import '../models/expense_model.dart';
+import '../models/budget_model.dart';
+
+/// Local Storage Service using SQLite
+class LocalStorageService {
+  static Database? _database;
+  
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+  
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'youth_budget.db');
+    
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _onCreate,
+    );
+  }
+  
+  Future<void> _onCreate(Database db, int version) async {
+    // Expenses table
+    await db.execute('''
+      CREATE TABLE expenses (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL,
+        notes TEXT,
+        expense_date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        is_synced INTEGER DEFAULT 0
+      )
+    ''');
+    
+    // Budgets table
+    await db.execute('''
+      CREATE TABLE budgets (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL,
+        month INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        is_synced INTEGER DEFAULT 0,
+        UNIQUE(user_id, category, month, year)
+      )
+    ''');
+    
+    // User session table
+    await db.execute('''
+      CREATE TABLE user_session (
+        id INTEGER PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        display_name TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
+  }
+  
+  // ==================== EXPENSES ====================
+  
+  Future<void> insertExpense(ExpenseModel expense) async {
+    final db = await database;
+    await db.insert(
+      'expenses',
+      expense.toLocalJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+  
+  Future<List<ExpenseModel>> getExpenses(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'expenses',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'expense_date DESC',
+    );
+    return maps.map((e) => ExpenseModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<List<ExpenseModel>> getExpensesByMonth(
+    String userId,
+    int month,
+    int year,
+  ) async {
+    final db = await database;
+    final startDate = DateTime(year, month, 1).toIso8601String().split('T')[0];
+    final endDate = DateTime(year, month + 1, 0).toIso8601String().split('T')[0];
+    
+    final List<Map<String, dynamic>> maps = await db.query(
+      'expenses',
+      where: 'user_id = ? AND expense_date >= ? AND expense_date <= ?',
+      whereArgs: [userId, startDate, endDate],
+      orderBy: 'expense_date DESC',
+    );
+    return maps.map((e) => ExpenseModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<List<ExpenseModel>> getUnsyncedExpenses(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'expenses',
+      where: 'user_id = ? AND is_synced = 0',
+      whereArgs: [userId],
+    );
+    return maps.map((e) => ExpenseModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<void> markExpenseAsSynced(String id) async {
+    final db = await database;
+    await db.update(
+      'expenses',
+      {'is_synced': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  Future<void> deleteExpense(String id) async {
+    final db = await database;
+    await db.delete(
+      'expenses',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  // ==================== BUDGETS ====================
+  
+  Future<void> insertBudget(BudgetModel budget) async {
+    final db = await database;
+    await db.insert(
+      'budgets',
+      budget.toLocalJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+  
+  Future<List<BudgetModel>> getBudgets(String userId, int month, int year) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'budgets',
+      where: 'user_id = ? AND month = ? AND year = ?',
+      whereArgs: [userId, month, year],
+    );
+    return maps.map((e) => BudgetModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<List<BudgetModel>> getUnsyncedBudgets(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'budgets',
+      where: 'user_id = ? AND is_synced = 0',
+      whereArgs: [userId],
+    );
+    return maps.map((e) => BudgetModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<void> markBudgetAsSynced(String id) async {
+    final db = await database;
+    await db.update(
+      'budgets',
+      {'is_synced': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  Future<void> deleteBudget(String id) async {
+    final db = await database;
+    await db.delete(
+      'budgets',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  // ==================== USER SESSION ====================
+  
+  Future<void> saveUserSession(String oderId, String email, String? displayName) async {
+    final db = await database;
+    await db.delete('user_session');
+    await db.insert('user_session', {
+      'id': 1,
+      'user_id': oderId,
+      'email': email,
+      'display_name': displayName,
+      'created_at': DateTime.now().toIso8601String(),
+    });
+  }
+  
+  Future<Map<String, dynamic>?> getUserSession() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('user_session');
+    if (maps.isEmpty) return null;
+    return maps.first;
+  }
+  
+  Future<void> clearUserSession() async {
+    final db = await database;
+    await db.delete('user_session');
+  }
+  
+  // ==================== CLEAR ALL ====================
+  
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.delete('expenses');
+    await db.delete('budgets');
+    await db.delete('user_session');
+  }
+  // ==================== SETTINGS (Currency) ====================
+
+  Future<void> saveCurrency(String currencyCode) async {
+    final db = await database;
+    // We'll use user_session table to store app settings for simplicity or create a new one
+    // But since session might be cleared on logout, and settings should persist, 
+    // let's use shared_preferences logic or just a simple key-value table. 
+    // For now, let's CREATE a simple settings table if not exists.
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )
+    ''');
+    
+    await db.insert(
+      'settings',
+      {'key': 'currency', 'value': currencyCode},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<String?> getCurrency() async {
+    final db = await database;
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        'settings',
+        where: 'key = ?',
+        whereArgs: ['currency'],
+      );
+      if (maps.isNotEmpty) {
+        return maps.first['value'] as String;
+      }
+    } catch (e) {
+      // Table might not exist yet
+    }
+    return null;
+  }
+}

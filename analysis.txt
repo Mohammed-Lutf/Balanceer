@@ -1,0 +1,21 @@
+Analyzing counter-manager...                                    
+
+warning - The value of the field '_isLoading' isn't used - lib\screens\budget\budget_screen.dart:33:8 - unused_field
+   info - The private field _selectedYear could be 'final' - lib\screens\budget\budget_screen.dart:37:7 - prefer_final_fields
+  error - Invalid constant value - lib\screens\budget\budget_screen.dart:617:35 - invalid_constant
+warning - The '!' will have no effect because the receiver can't be null - lib\screens\budget\budget_screen.dart:631:43 - unnecessary_non_null_assertion
+warning - The value of the field '_isLoading' isn't used - lib\screens\home\home_screen.dart:38:8 - unused_field
+  error - Undefined class 'AppCurrency' - lib\screens\home\home_screen.dart:42:3 - undefined_class
+  error - Undefined name 'AppCurrency' - lib\screens\home\home_screen.dart:42:27 - undefined_identifier
+  error - Undefined name 'AppCurrency' - lib\screens\home\home_screen.dart:71:19 - undefined_identifier
+  error - Undefined name 'AppCurrency' - lib\screens\home\home_screen.dart:73:23 - undefined_identifier
+  error - Undefined name 'AppCurrency' - lib\screens\home\home_screen.dart:120:16 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\home\home_screen.dart:147:44 - use_build_context_synchronously
+   info - The private field _selectedYear could be 'final' - lib\screens\reports\reports_screen.dart:35:7 - prefer_final_fields
+   info - The imported package 'path' isn't a dependency of the importing package - lib\services\local_storage_service.dart:2:8 - depend_on_referenced_packages
+   info - Don't invoke 'print' in production code - lib\services\sync_service.dart:50:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\sync_service.dart:111:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\sync_service.dart:135:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\sync_service.dart:150:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\sync_service.dart:166:9 - avoid_print
+
