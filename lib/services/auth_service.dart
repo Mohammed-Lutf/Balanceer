@@ -277,19 +277,45 @@ class AuthService {
     // Check if guest
     final isGuest = await _secureStorage.read(key: 'is_guest') == 'true';
     
-    if (!isGuest && _connectivity.isConnected) {
-      await _supabase.signOut();
-      try {
-        await GoogleSignIn().signOut();
-      } catch (e) {
-        // Ignore if not signed in with Google
+    // Always attempt to sign out from Supabase to clear local session state
+    // Even if offline, this clears the persisted session token
+    try {
+      if (!isGuest) {
+        await _supabase.signOut();
       }
+    } catch (e) {
+      // Ignore errors during sign out (e.g. network issues)
     }
     
+    // Attempt Google sign out if applicable
+    try {
+      await GoogleSignIn().signOut();
+    } catch (e) {
+      // Ignore
+    }
+    
+    // Clear all local session data
     await _localStorage.clearUserSession();
     await _secureStorage.delete(key: 'email');
     await _secureStorage.delete(key: 'password');
     await _secureStorage.delete(key: 'is_guest');
+  }
+  
+  /// Get user ID (works offline)
+  Future<String?> getUserId() async {
+    // 1. Check if guest first
+    if (await isGuestSession()) {
+      return await getGuestUserId();
+    }
+    
+    // 2. Check Supabase user
+    if (currentUser != null) {
+      return currentUser!.id;
+    }
+    
+    // 3. Fallback to stored session
+    final session = await _localStorage.getUserSession();
+    return session?['user_id'] as String?;
   }
   
   /// Check if user has saved session
@@ -302,15 +328,7 @@ class AuthService {
     return session != null;
   }
   
-  /// Get user ID (works offline)
-  Future<String?> getUserId() async {
-    if (currentUser != null) {
-      return currentUser!.id;
-    }
-    
-    final session = await _localStorage.getUserSession();
-    return session?['user_id'] as String?;
-  }
+
   
   String _getArabicError(String message) {
     if (message.contains('Invalid login credentials')) {

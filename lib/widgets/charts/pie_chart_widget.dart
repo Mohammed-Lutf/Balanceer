@@ -79,7 +79,9 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
       final index = entry.key;
       final categoryEntry = entry.value;
       final isTouched = index == _touchedIndex;
-      final percentage = (categoryEntry.value / widget.totalExpenses * 100);
+      final percentage = widget.totalExpenses > 0 
+          ? (categoryEntry.value / widget.totalExpenses * 100) 
+          : 0.0;
       final color = AppTheme.categoryColors[categoryEntry.key.key] ?? AppTheme.textMuted;
       
       return PieChartSectionData(
@@ -128,7 +130,9 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: entries.take(5).map((entry) {
         final color = AppTheme.categoryColors[entry.key.key] ?? AppTheme.textMuted;
-        final percentage = (entry.value / widget.totalExpenses * 100);
+        final percentage = widget.totalExpenses > 0
+            ? (entry.value / widget.totalExpenses * 100)
+            : 0.0;
         
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),

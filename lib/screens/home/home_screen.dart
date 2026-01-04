@@ -307,7 +307,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
   Widget _buildSummaryCards() {
     final remaining = _monthlyBudget - _totalExpenses;
-    final percentage = _monthlyBudget > 0 ? (_totalExpenses / _monthlyBudget * 100) : 0;
+    final safeMonthlyBudget = _monthlyBudget.isFinite ? _monthlyBudget : 0.0;
+    final percentage = (safeMonthlyBudget > 0) 
+        ? (_totalExpenses / safeMonthlyBudget * 100) 
+        : 0.0;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -337,12 +340,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          '${_numberFormat.format(_monthlyBudget)} ${_currency.symbol}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                        SizedBox(
+                          width: 200,
+                          child: FittedBox(
+                            alignment: Alignment.centerRight,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${_numberFormat.format(_monthlyBudget)} ${_currency.symbol}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -381,15 +391,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'المصروف: ${_numberFormat.format(_totalExpenses)} ${_currency.symbol}',
-                      style: const TextStyle(color: Colors.white70),
+                    Expanded(
+                      child: FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'المصروف: ${_numberFormat.format(_totalExpenses)} ${_currency.symbol}',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ),
                     ),
-                    Text(
-                      '${percentage.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        color: percentage > 100 ? Colors.red[300] : Colors.white,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 8),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '${percentage.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          color: percentage > 100 ? Colors.red[300] : Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],

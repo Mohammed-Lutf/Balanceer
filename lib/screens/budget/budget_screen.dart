@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -179,12 +180,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
   
   Widget _buildSummaryCard() {
-    final remaining = _totalBudget - _totalExpenses;
-    final percentage = _totalBudget > 0 ? (_totalExpenses / _totalBudget * 100) : 0;
+    final safeTotalBudget = _totalBudget.isFinite ? _totalBudget : 0.0;
+    final remaining = safeTotalBudget - _totalExpenses;
+    final percentage = (safeTotalBudget > 0 && safeTotalBudget.isFinite) 
+        ? (_totalExpenses / safeTotalBudget * 100) 
+        : 0.0;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
+        height: 180, // Fixed height to prevent layout shifts
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           gradient: AppTheme.primaryGradient,
@@ -268,12 +273,19 @@ class _BudgetScreenState extends State<BudgetScreen> {
           style: const TextStyle(color: Colors.white70, fontSize: 11),
         ),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: isNegative ? Colors.red[300] : Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+        Container(
+          constraints: const BoxConstraints(maxWidth: 80),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: TextStyle(
+                color: isNegative ? Colors.red[300] : Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ),
         ),
       ],
@@ -611,7 +623,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: amountController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(9),
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                    ],
                     decoration: InputDecoration(
                       hintText: '0.00',
                       suffixText: widget.currency.symbol,
