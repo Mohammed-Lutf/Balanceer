@@ -123,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                 // Next Button
                 GestureDetector(
-                  onPressed: () {
+                  onTap: () {
                     if (_currentPage < _pages.length - 1) {
                       _pageController.nextPage(
                         duration: const Duration(milliseconds: 600),
