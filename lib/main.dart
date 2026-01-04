@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config/theme.dart';
 import 'services/supabase_service.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,17 +25,23 @@ void main() async {
   
   // Initialize Supabase
   await SupabaseService.initialize();
+
+  // Check if first run
+  final prefs = await SharedPreferences.getInstance();
+  final bool showOnboarding = prefs.getBool('onboarding_complete') != true;
   
-  runApp(const YouthBudgetApp());
+  runApp(YouthBudgetApp(showOnboarding: showOnboarding));
 }
 
 class YouthBudgetApp extends StatelessWidget {
-  const YouthBudgetApp({super.key});
+  final bool showOnboarding;
+  
+  const YouthBudgetApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ميزانيتي',
+      title: 'Balanceer',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       locale: const Locale('ar'),
@@ -43,7 +51,7 @@ class YouthBudgetApp extends StatelessWidget {
           child: child!,
         );
       },
-      home: const LoginScreen(),
+      home: showOnboarding ? const OnboardingScreen() : const LoginScreen(),
     );
   }
 }
