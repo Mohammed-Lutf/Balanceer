@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../models/expense_model.dart';
+import '../../models/budget_model.dart';
 import '../../utils/constants.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/local_storage_service.dart';
@@ -15,7 +16,9 @@ import '../expenses/add_expense_screen.dart';
 import '../budget/budget_screen.dart';
 import '../reports/reports_screen.dart';
 import '../auth/login_screen.dart';
+import '../../services/export_service.dart';
 import '../../widgets/charts/pie_chart_widget.dart';
+import '../debt/debt_tracker_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
   String? _userId;
   List<ExpenseModel> _expenses = [];
+  List<BudgetModel> _budgets = [];
   double _totalExpenses = 0;
   double _monthlyBudget = 0;
   bool _isLoading = true;
@@ -103,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _totalExpenses = _expenses.fold(0, (sum, e) => sum + e.amount);
     
     final budgets = await _syncService.getBudgets(_userId!, now.month, now.year);
+    _budgets = budgets;
     _monthlyBudget = budgets.fold(0, (sum, b) => sum + b.amount);
     
     if (_connectivity.isConnected) {
@@ -292,36 +297,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           
           // Connection Status
-          StreamBuilder<bool>(
-            stream: _connectivity.connectionStream,
-            builder: (context, snapshot) {
-              final isConnected = snapshot.data ?? _connectivity.isConnected;
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: (isConnected ? Colors.green : Colors.orange).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isConnected ? Iconsax.wifi : Iconsax.wifi_square,
-                      size: 16,
-                      color: isConnected ? Colors.green : Colors.orange,
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Iconsax.document_download, color: Colors.white70),
+                onPressed: _showExportOptions,
+                tooltip: 'تصدير التقرير',
+              ),
+              const SizedBox(width: 8),
+              StreamBuilder<bool>(
+                stream: _connectivity.connectionStream,
+                builder: (context, snapshot) {
+                  final isConnected = snapshot.data ?? _connectivity.isConnected;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: (isConnected ? Colors.green : Colors.orange).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isConnected ? 'متصل' : 'غير متصل',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isConnected ? Colors.green : Colors.orange,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isConnected ? Iconsax.wifi : Iconsax.wifi_square,
+                          size: 16,
+                          color: isConnected ? Colors.green : Colors.orange,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isConnected ? 'متصل' : 'غير متصل',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isConnected ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -466,6 +481,63 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+          
+          const SizedBox(height: 16),
+          
+          // Debt Tracker Entry
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DebtTrackerScreen()),
+              ).then((_) => _loadData());
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                children: [
+                  Icon(Iconsax.personalcard, color: AppTheme.primaryColor),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'مدير الديون (Debt Tracker)',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          'سجل الديون التي لك أو عليك مع تواريخ السداد',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, color: AppTheme.textMuted, size: 16),
+                ],
+              ),
+            ),
+          ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.2, end: 0),
         ],
       ),
     );
@@ -1022,6 +1094,80 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   
+  void _showExportOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'تصدير التقرير',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+            ),
+            const SizedBox(height: 24),
+            _buildSettingItem(
+              icon: Iconsax.document_text,
+              title: 'تصدير بصيغة PDF',
+              subtitle: 'تقرير منسق قابل للطباعة والمشاركة',
+              onTap: () async {
+                Navigator.pop(context);
+                try {
+                  final monthName = DateFormat('MMMM', 'ar').format(DateTime.now());
+                  await ExportService.exportToPdf(
+                    userName: 'مستخدم Balanceer',
+                    expenses: _expenses,
+                    budgets: _budgets,
+                    monthName: monthName,
+                    year: DateTime.now().year,
+                    totalBudget: _monthlyBudget,
+                    totalSpent: _totalExpenses,
+                    currency: _currency.code,
+                  );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('خطأ في تصدير PDF: $e')),
+                    );
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildSettingItem(
+              icon: Iconsax.document_1,
+              title: 'تصدير بصيغة Excel',
+              subtitle: 'ملف بيانات لفتحه عبر جداول البيانات',
+              onTap: () async {
+                Navigator.pop(context);
+                try {
+                  final monthName = DateFormat('MMMM', 'ar').format(DateTime.now());
+                  await ExportService.exportToExcel(
+                    expenses: _expenses,
+                    monthName: monthName,
+                    year: DateTime.now().year,
+                    currency: _currency.code,
+                  );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('خطأ في تصدير Excel: $e')),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _navigateToLogin() {
     Navigator.push(
       context,

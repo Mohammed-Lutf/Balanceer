@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// Local font defined in pubspec.yaml: Cairo
 
 /// App Theme Configuration - Modern & Premium Design
 class AppTheme {
@@ -95,17 +95,26 @@ class AppTheme {
         surface: surfaceColor,
         error: accentRed,
       ),
-      textTheme: GoogleFonts.cairoTextTheme(
-        ThemeData.dark().textTheme,
-      ).apply(
-        bodyColor: textPrimary,
-        displayColor: textPrimary,
+      fontFamily: 'Cairo',
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: textPrimary),
+        bodyMedium: TextStyle(color: textPrimary),
+        displayLarge: TextStyle(color: textPrimary),
+        displayMedium: TextStyle(color: textPrimary),
+        displaySmall: TextStyle(color: textPrimary),
+        headlineLarge: TextStyle(color: textPrimary),
+        headlineMedium: TextStyle(color: textPrimary),
+        headlineSmall: TextStyle(color: textPrimary),
+        titleLarge: TextStyle(color: textPrimary),
+        titleMedium: TextStyle(color: textPrimary),
+        titleSmall: TextStyle(color: textPrimary),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.cairo(
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Cairo',
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: textPrimary,
@@ -127,7 +136,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMedium),
           ),
-          textStyle: GoogleFonts.cairo(
+          textStyle: const TextStyle(
+            fontFamily: 'Cairo',
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -149,8 +159,8 @@ class AppTheme {
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        hintStyle: GoogleFonts.cairo(color: textMuted),
-        labelStyle: GoogleFonts.cairo(color: textSecondary),
+        hintStyle: const TextStyle(color: textMuted),
+        labelStyle: const TextStyle(color: textSecondary),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: cardBackground,

@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/expense_model.dart';
 import '../models/budget_model.dart';
+import '../models/debt_model.dart';
 
 /// Local Storage Service using SQLite
 class LocalStorageService {
@@ -19,9 +20,16 @@ class LocalStorageService {
     
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Incremented version to add debts table
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createDebtsTable(db);
+    }
   }
   
   Future<void> _onCreate(Database db, int version) async {
@@ -62,6 +70,28 @@ class LocalStorageService {
         email TEXT NOT NULL,
         display_name TEXT,
         created_at TEXT NOT NULL
+      )
+    ''');
+
+    // Debts table
+    await _createDebtsTable(db);
+  }
+
+  Future<void> _createDebtsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE debts (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        person_name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        type TEXT NOT NULL,
+        debt_date TEXT NOT NULL,
+        due_date TEXT,
+        paid_date TEXT,
+        is_paid INTEGER DEFAULT 0,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        is_synced INTEGER DEFAULT 0
       )
     ''');
   }
@@ -211,12 +241,64 @@ class LocalStorageService {
     await db.delete('user_session');
   }
   
+  // ==================== DEBTS ====================
+  
+  Future<void> insertDebt(DebtModel debt) async {
+    final db = await database;
+    await db.insert(
+      'debts',
+      debt.toLocalJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+  
+  Future<List<DebtModel>> getDebts(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'debts',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'created_at DESC',
+    );
+    return maps.map((e) => DebtModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<List<DebtModel>> getUnsyncedDebts(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'debts',
+      where: 'user_id = ? AND is_synced = 0',
+      whereArgs: [userId],
+    );
+    return maps.map((e) => DebtModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<void> markDebtAsSynced(String id) async {
+    final db = await database;
+    await db.update(
+      'debts',
+      {'is_synced': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  Future<void> deleteDebt(String id) async {
+    final db = await database;
+    await db.delete(
+      'debts',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
   // ==================== CLEAR ALL ====================
   
   Future<void> clearAllData() async {
     final db = await database;
     await db.delete('expenses');
     await db.delete('budgets');
+    await db.delete('debts');
     await db.delete('user_session');
   }
   // ==================== SETTINGS (Currency) ====================

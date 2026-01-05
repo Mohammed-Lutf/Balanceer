@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/expense_model.dart';
 import '../models/budget_model.dart';
+import '../models/debt_model.dart';
 
 /// Supabase Service for cloud operations
 class SupabaseService {
@@ -147,6 +148,35 @@ class SupabaseService {
   
   Future<void> deleteBudget(String id) async {
     await client.from('budgets').delete().eq('id', id);
+  }
+  
+  // ==================== DEBTS ====================
+  
+  Future<void> insertDebt(DebtModel debt) async {
+    await client.from('debts').upsert(debt.toJson());
+  }
+  
+  Future<void> upsertDebts(List<DebtModel> debts) async {
+    if (debts.isEmpty) return;
+    await client.from('debts').upsert(
+      debts.map((e) => e.toJson()).toList(),
+    );
+  }
+  
+  Future<List<DebtModel>> getDebts(String userId) async {
+    final response = await client
+        .from('debts')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+    
+    return (response as List)
+        .map((e) => DebtModel.fromJson(e))
+        .toList();
+  }
+  
+  Future<void> deleteDebt(String id) async {
+    await client.from('debts').delete().eq('id', id);
   }
   
   // ==================== REAL-TIME ====================

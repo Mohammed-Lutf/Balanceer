@@ -4,6 +4,7 @@ import 'local_storage_service.dart';
 import 'supabase_service.dart';
 import '../models/expense_model.dart';
 import '../models/budget_model.dart';
+import '../models/debt_model.dart';
 
 /// Sync Service - Handles synchronization between local and cloud storage
 class SyncService {
@@ -45,6 +46,7 @@ class SyncService {
     try {
       await _syncExpenses(user.id);
       await _syncBudgets(user.id);
+      await _syncDebts(user.id);
     } catch (e) {
       // Log error but don't throw
       print('Sync error: $e');
@@ -93,6 +95,27 @@ class SyncService {
     final cloudBudgets = await _supabase.getBudgets(userId, now.month, now.year);
     for (final budget in cloudBudgets) {
       await _localStorage.insertBudget(budget.copyWith(isSynced: true));
+    }
+  }
+  
+  Future<void> _syncDebts(String userId) async {
+    // Get unsynced debts
+    final unsyncedDebts = await _localStorage.getUnsyncedDebts(userId);
+    
+    if (unsyncedDebts.isNotEmpty) {
+      // Upload to Supabase
+      await _supabase.upsertDebts(unsyncedDebts);
+      
+      // Mark as synced locally
+      for (final debt in unsyncedDebts) {
+        await _localStorage.markDebtAsSynced(debt.id);
+      }
+    }
+    
+    // Download from Supabase
+    final cloudDebts = await _supabase.getDebts(userId);
+    for (final debt in cloudDebts) {
+      await _localStorage.insertDebt(debt.copyWith(isSynced: true));
     }
   }
   
@@ -179,6 +202,50 @@ class SyncService {
         await _supabase.deleteBudget(id);
       } catch (e) {
         print('Failed to delete budget from cloud: $e');
+      }
+    }
+  }
+  
+  // ==================== DEBT OPERATIONS ====================
+  
+  Future<void> addDebt(DebtModel debt) async {
+    await _localStorage.insertDebt(debt);
+    
+    if (_connectivity.isConnected) {
+      try {
+        await _supabase.insertDebt(debt);
+        await _localStorage.markDebtAsSynced(debt.id);
+      } catch (e) {
+        print('Failed to sync debt: $e');
+      }
+    }
+  }
+  
+  Future<void> updateDebt(DebtModel debt) async {
+    await _localStorage.insertDebt(debt);
+    
+    if (_connectivity.isConnected) {
+      try {
+        await _supabase.upsertDebts([debt]);
+        await _localStorage.markDebtAsSynced(debt.id);
+      } catch (e) {
+        print('Failed to sync updated debt: $e');
+      }
+    }
+  }
+  
+  Future<List<DebtModel>> getDebts(String userId) async {
+    return await _localStorage.getDebts(userId);
+  }
+  
+  Future<void> deleteDebt(String id) async {
+    await _localStorage.deleteDebt(id);
+    
+    if (_connectivity.isConnected) {
+      try {
+        await _supabase.deleteDebt(id);
+      } catch (e) {
+        print('Failed to delete debt from cloud: $e');
       }
     }
   }
