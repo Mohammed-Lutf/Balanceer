@@ -113,6 +113,21 @@ class SyncService {
     }
   }
   
+  Future<void> updateExpense(ExpenseModel expense) async {
+    // Always save locally first (insert acts as upsert in SQLite with conflict algorithm)
+    await _localStorage.insertExpense(expense);
+    
+    // If connected, sync immediately
+    if (_connectivity.isConnected) {
+      try {
+        await _supabase.upsertExpenses([expense]);
+        await _localStorage.markExpenseAsSynced(expense.id);
+      } catch (e) {
+        print('Failed to sync updated expense: $e');
+      }
+    }
+  }
+  
   Future<List<ExpenseModel>> getExpenses(String userId) async {
     return await _localStorage.getExpenses(userId);
   }

@@ -40,7 +40,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
   final _numberFormat = NumberFormat('#,##0.00', 'ar');
   
+
+  
   AppCurrency _currency = AppCurrency.sar;
+  bool _showAllExpenses = false;
 
 
   bool _isGuest = false;
@@ -549,7 +552,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
   
   Widget _buildRecentExpenses() {
-    final recentExpenses = _expenses.take(5).toList();
+    // If _showAllExpenses is true, show all expenses. Otherwise, show only the top 5.
+    final displayedExpenses = _showAllExpenses ? _expenses : _expenses.take(5).toList();
     
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -568,15 +572,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               TextButton(
                 onPressed: () {
-                  // Navigate to all expenses
+                  setState(() {
+                    _showAllExpenses = !_showAllExpenses;
+                  });
                 },
-                child: const Text('عرض الكل'),
+                child: Text(_showAllExpenses ? 'عرض أقل' : 'عرض الكل'),
               ),
             ],
           ),
           const SizedBox(height: 12),
           
-          if (recentExpenses.isEmpty)
+          if (displayedExpenses.isEmpty)
             Container(
               padding: const EdgeInsets.all(32),
               decoration: AppTheme.glassDecoration,
@@ -603,12 +609,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             )
           else
-            ...recentExpenses.asMap().entries.map((entry) {
+            ...displayedExpenses.asMap().entries.map((entry) {
               final index = entry.key;
               final expense = entry.value;
               return _buildExpenseItem(expense)
                   .animate()
-                  .fadeIn(delay: (500 + index * 100).ms)
+                  .fadeIn(delay: (100 + index * 50).ms)
                   .slideX(begin: 0.1, end: 0);
             }),
         ],
@@ -690,6 +696,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
             ],
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddExpenseScreen(
+                    userId: _userId ?? '',
+                    syncService: _syncService,
+                    expense: expense,
+                  ),
+                ),
+              );
+              if (result == true) {
+                _loadData();
+              }
+            },
+            icon: const Icon(Iconsax.edit, color: AppTheme.primaryColor),
           ),
         ],
       ),

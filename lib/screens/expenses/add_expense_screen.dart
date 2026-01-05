@@ -14,7 +14,10 @@ class AddExpenseScreen extends StatefulWidget {
     super.key,
     required this.userId,
     required this.syncService,
+    this.expense,
   });
+
+  final ExpenseModel? expense;
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -28,6 +31,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ExpenseCategory _selectedCategory = ExpenseCategory.food;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.expense != null) {
+      _amountController.text = widget.expense!.amount.toString();
+      _notesController.text = widget.expense!.notes ?? '';
+      _selectedCategory = widget.expense!.category;
+      _selectedDate = widget.expense!.expenseDate;
+    }
+  }
   
   @override
   void dispose() {
@@ -40,16 +54,28 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (!_formKey.currentState!.validate()) return;
     
     setState(() => _isLoading = true);
+
+    final expense = widget.expense != null 
+        ? widget.expense!.copyWith(
+            category: _selectedCategory,
+            amount: double.parse(_amountController.text),
+            notes: _notesController.text.isEmpty ? null : _notesController.text,
+            expenseDate: _selectedDate,
+            isSynced: false,
+          )
+        : ExpenseModel.create(
+            userId: widget.userId,
+            category: _selectedCategory,
+            amount: double.parse(_amountController.text),
+            notes: _notesController.text.isEmpty ? null : _notesController.text,
+            expenseDate: _selectedDate,
+          );
     
-    final expense = ExpenseModel.create(
-      userId: widget.userId,
-      category: _selectedCategory,
-      amount: double.parse(_amountController.text),
-      notes: _notesController.text.isEmpty ? null : _notesController.text,
-      expenseDate: _selectedDate,
-    );
-    
-    await widget.syncService.addExpense(expense);
+    if (widget.expense != null) {
+      await widget.syncService.updateExpense(expense);
+    } else {
+      await widget.syncService.addExpense(expense);
+    }
     
     if (mounted) {
       Navigator.pop(context, true);
@@ -135,7 +161,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           ),
           const SizedBox(width: 12),
           Text(
-            'إضافة نفقة جديدة',
+            widget.expense != null ? 'تعديل النفقة' : 'إضافة نفقة جديدة',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -379,14 +405,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   color: Colors.white,
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Iconsax.add_circle, color: Colors.white),
-                  SizedBox(width: 8),
+                  const Icon(Iconsax.add_circle, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'حفظ النفقة',
-                    style: TextStyle(
+                    widget.expense != null ? 'حفظ التعديلات' : 'حفظ النفقة',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
