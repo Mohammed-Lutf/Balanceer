@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../config/theme.dart';
 import '../../models/expense_model.dart';
+import '../../models/budget_model.dart';
 import '../../services/sync_service.dart';
 import '../../services/notification_service.dart';
 
@@ -98,7 +99,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       // Find budget for selected category
       BudgetModel? categoryBudget;
       for (final b in budgets) {
-        if (b.category == category) {
+        if (b.category == category.key) {
           categoryBudget = b;
           break;
         }
