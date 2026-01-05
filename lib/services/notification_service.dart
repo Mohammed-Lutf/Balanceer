@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:home_widget/home_widget.dart';
 import 'dart:io';
 
 class NotificationService {
@@ -108,6 +109,66 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
     return scheduledDate;
+  }
+
+  Future<void> showPersistentSummary({
+    required double totalBudget,
+    required double totalSpent,
+    required String currency,
+  }) async {
+    final double remaining = totalBudget - totalSpent;
+    final String status = remaining >= 0 ? 'متبقي' : 'متجاوز بـ';
+    final String amount = (remaining.abs()).toStringAsFixed(2);
+
+    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'persistent_summary_channel',
+      'ملخص الميزانية المستمر',
+      channelDescription: 'يظهر الرصيد المتبقي في لوحة الإشعارات',
+      importance: Importance.low,
+      priority: Priority.low,
+      ongoing: true,
+      autoCancel: false,
+      showWhen: false,
+      onlyAlertOnce: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    final NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+    );
+
+    await _notificationsPlugin.show(
+      999, // Static ID for the persistent notification
+      'مــيزانيتي: $status $amount $currency',
+      'إجمالي المصاريف: ${totalSpent.toStringAsFixed(2)} $currency',
+      platformDetails,
+    );
+
+    // Update Home Widget data as well
+    await updateHomeWidget(
+      totalBudget: totalBudget,
+      totalSpent: totalSpent,
+      currency: currency,
+    );
+  }
+
+  Future<void> updateHomeWidget({
+    required double totalBudget,
+    required double totalSpent,
+    required String currency,
+  }) async {
+    final double remaining = totalBudget - totalSpent;
+    final String amountLabel = remaining.toStringAsFixed(2);
+
+    await HomeWidget.saveWidgetData<String>('amount', amountLabel);
+    await HomeWidget.saveWidgetData<String>('currency', currency);
+    await HomeWidget.updateWidget(
+      androidName: 'BalanceerWidget',
+    );
+  }
+
+  Future<void> cancelPersistentSummary() async {
+    await _notificationsPlugin.cancel(999);
   }
 
   Future<void> cancelAll() async {

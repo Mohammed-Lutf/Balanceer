@@ -42,9 +42,10 @@ dependencies:
   intl: ^0.19.0
   uuid: ^4.5.1
   
-  # Notifications
+  # Notifications & Widgets
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
+  home_widget: ^0.7.0
 
 dev_dependencies:
   flutter_test:

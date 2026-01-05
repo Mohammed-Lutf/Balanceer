@@ -108,8 +108,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_connectivity.isConnected) {
       await _syncService.syncAll();
     }
+
+    // Phase 1: Persistent Notification update
+    _updatePersistentNotification();
     
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _updatePersistentNotification() async {
+    await NotificationService().showPersistentSummary(
+      totalBudget: _monthlyBudget,
+      totalSpent: _totalExpenses,
+      currency: _currency.code,
+    );
   }
 
   Future<void> _changeCurrency() async {

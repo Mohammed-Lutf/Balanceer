@@ -82,8 +82,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     // Phase 2: Budget notifications
     _checkBudgetNotifications(expense.category, expense.expenseDate);
     
+    // Refresh persistent notification and widget
     if (mounted) {
-      Navigator.pop(context, true);
+       // We need to pass the updated totals.
+       // For simplicity, let's trigger a pop with a refresh signal.
+       Navigator.pop(context, true);
     }
   }
 
