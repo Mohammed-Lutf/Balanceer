@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'config/theme.dart';
 import 'services/supabase_service.dart';
 import 'services/local_storage_service.dart';
+import 'services/notification_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -28,6 +29,9 @@ void main() async {
   
   // Initialize Supabase
   await SupabaseService.initialize();
+
+  // Initialize Notifications
+  await NotificationService().init();
 
   // Check if first run
   final prefs = await SharedPreferences.getInstance();

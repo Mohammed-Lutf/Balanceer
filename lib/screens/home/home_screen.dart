@@ -10,6 +10,7 @@ import '../../services/local_storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/notification_service.dart';
 import '../expenses/add_expense_screen.dart';
 import '../budget/budget_screen.dart';
 import '../reports/reports_screen.dart';
@@ -80,6 +81,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         orElse: () => AppCurrency.sar,
       );
     }
+    
+    // Schedule daily reminder at 9 PM
+    await NotificationService().scheduleDailyReminder(
+      title: 'مــيزانيتي 💰',
+      body: 'لا تنسى تسجيل نفقاتك اليوم للمحافظة على ميزانيتك!',
+      hour: 21,
+      minute: 0,
+    );
     
     await _loadData();
   }

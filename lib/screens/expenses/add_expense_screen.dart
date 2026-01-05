@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../config/theme.dart';
 import '../../models/expense_model.dart';
 import '../../services/sync_service.dart';
+import '../../services/notification_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final String userId;
@@ -76,9 +77,54 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     } else {
       await widget.syncService.addExpense(expense);
     }
+
+    // Phase 2: Budget notifications
+    _checkBudgetNotifications(expense.category, expense.expenseDate);
     
     if (mounted) {
       Navigator.pop(context, true);
+    }
+  }
+
+  Future<void> _checkBudgetNotifications(ExpenseCategory category, DateTime date) async {
+    try {
+      // Get all budgets for the month
+      final budgets = await widget.syncService.getBudgets(
+        widget.userId,
+        date.month,
+        date.year,
+      );
+      
+      // Find budget for selected category
+      BudgetModel? categoryBudget;
+      for (final b in budgets) {
+        if (b.category == category) {
+          categoryBudget = b;
+          break;
+        }
+      }
+
+      if (categoryBudget != null) {
+        // Get all expenses for this category in the same month
+        final expenses = await widget.syncService.getExpensesByMonth(
+          widget.userId,
+          date.month,
+          date.year,
+        );
+        
+        final categoryTotal = expenses
+            .where((e) => e.category == category)
+            .fold(0.0, (sum, e) => sum + e.amount);
+
+        // Notify if threshold reached
+        await NotificationService().checkAndNotifyBudgetThreshold(
+          currentSpent: categoryTotal,
+          totalBudget: categoryBudget.amount,
+          categoryName: category.arabicName,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error checking budget notifications: $e');
     }
   }
   
