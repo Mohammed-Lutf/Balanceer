@@ -383,7 +383,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               
               return _buildCategoryBudgetItem(
                 category,
-                budget!.amount,
+                budget?.amount ?? 0,
                 expense,
                 budget,
               );

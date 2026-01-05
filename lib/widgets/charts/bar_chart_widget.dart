@@ -135,7 +135,6 @@ class _ExpenseBarChartState extends State<ExpenseBarChart> {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: 500,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
                     color: Colors.white.withValues(alpha: 0.05),
