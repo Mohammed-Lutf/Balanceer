@@ -20,7 +20,7 @@ class LocalStorageService {
     
     return await openDatabase(
       path,
-      version: 2, // Incremented version to add debts table
+      version: 3, // Incremented for pending_deletes table
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -29,6 +29,9 @@ class LocalStorageService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _createDebtsTable(db);
+    }
+    if (oldVersion < 3) {
+      await _createPendingDeletesTable(db);
     }
   }
   
@@ -75,11 +78,14 @@ class LocalStorageService {
 
     // Debts table
     await _createDebtsTable(db);
+    
+    // Pending deletes table
+    await _createPendingDeletesTable(db);
   }
 
   Future<void> _createDebtsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE debts (
+      CREATE TABLE IF NOT EXISTS debts (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         person_name TEXT NOT NULL,
@@ -94,6 +100,61 @@ class LocalStorageService {
         is_synced INTEGER DEFAULT 0
       )
     ''');
+  }
+  
+  Future<void> _createPendingDeletesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS pending_deletes (
+        id TEXT PRIMARY KEY,
+        table_name TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+  }
+  
+  // ==================== PENDING DELETES ====================
+  
+  Future<void> addPendingDelete(String tableName, String recordId) async {
+    final db = await database;
+    await db.insert(
+      'pending_deletes',
+      {
+        'id': '${tableName}_$recordId',
+        'table_name': tableName,
+        'record_id': recordId,
+        'created_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+  
+  Future<List<String>> getPendingDeletes(String tableName) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'pending_deletes',
+      where: 'table_name = ?',
+      whereArgs: [tableName],
+    );
+    return maps.map((e) => e['record_id'] as String).toList();
+  }
+  
+  Future<void> removePendingDelete(String tableName, String recordId) async {
+    final db = await database;
+    await db.delete(
+      'pending_deletes',
+      where: 'table_name = ? AND record_id = ?',
+      whereArgs: [tableName, recordId],
+    );
+  }
+  
+  Future<void> clearPendingDeletes(String tableName) async {
+    final db = await database;
+    await db.delete(
+      'pending_deletes',
+      where: 'table_name = ?',
+      whereArgs: [tableName],
+    );
   }
   
   // ==================== EXPENSES ====================

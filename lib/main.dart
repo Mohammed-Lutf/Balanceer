@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/theme.dart';
 import 'services/supabase_service.dart';
 import 'services/local_storage_service.dart';
 import 'services/notification_service.dart';
+import 'services/connectivity_service.dart';
+import 'services/sync_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -92,18 +95,37 @@ class YouthBudgetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Balanceer',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      locale: const Locale('ar'),
-      builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
-        );
-      },
-      home: _getInitialScreen(),
+    // Initialize services
+    final localStorageService = LocalStorageService();
+    final supabaseService = SupabaseService();
+    final connectivityService = ConnectivityService();
+    
+    return MultiProvider(
+      providers: [
+        Provider<LocalStorageService>.value(value: localStorageService),
+        Provider<SupabaseService>.value(value: supabaseService),
+        Provider<ConnectivityService>.value(value: connectivityService),
+        Provider<SyncService>(
+          create: (_) => SyncService(
+            connectivity: connectivityService,
+            localStorage: localStorageService,
+            supabase: supabaseService,
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Balanceer',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        locale: const Locale('ar'),
+        builder: (context, child) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: child!,
+          );
+        },
+        home: _getInitialScreen(),
+      ),
     );
   }
   

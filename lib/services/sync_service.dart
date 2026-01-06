@@ -99,7 +99,18 @@ class SyncService {
   }
   
   Future<void> _syncDebts(String userId) async {
-    // Get unsynced debts
+    // Step 1: Process pending deletions first
+    final pendingDeletes = await _localStorage.getPendingDeletes('debts');
+    for (final recordId in pendingDeletes) {
+      try {
+        await _supabase.deleteDebt(recordId);
+        await _localStorage.removePendingDelete('debts', recordId);
+      } catch (e) {
+        print('Failed to sync delete for debt $recordId: $e');
+      }
+    }
+    
+    // Step 2: Get unsynced debts and upload
     final unsyncedDebts = await _localStorage.getUnsyncedDebts(userId);
     
     if (unsyncedDebts.isNotEmpty) {
@@ -112,10 +123,14 @@ class SyncService {
       }
     }
     
-    // Download from Supabase
+    // Step 3: Download from Supabase (only items not in pending deletes)
+    final remainingPendingDeletes = await _localStorage.getPendingDeletes('debts');
     final cloudDebts = await _supabase.getDebts(userId);
     for (final debt in cloudDebts) {
-      await _localStorage.insertDebt(debt.copyWith(isSynced: true));
+      // Skip if this debt is pending deletion
+      if (!remainingPendingDeletes.contains(debt.id)) {
+        await _localStorage.insertDebt(debt.copyWith(isSynced: true));
+      }
     }
   }
   
@@ -239,14 +254,21 @@ class SyncService {
   }
   
   Future<void> deleteDebt(String id) async {
+    // Always delete locally first
     await _localStorage.deleteDebt(id);
     
     if (_connectivity.isConnected) {
+      // If connected, delete from cloud immediately
       try {
         await _supabase.deleteDebt(id);
       } catch (e) {
-        print('Failed to delete debt from cloud: $e');
+        // If cloud delete fails, add to pending deletes
+        await _localStorage.addPendingDelete('debts', id);
+        print('Failed to delete debt from cloud, added to pending: $e');
       }
+    } else {
+      // If offline, add to pending deletes for later sync
+      await _localStorage.addPendingDelete('debts', id);
     }
   }
   
