@@ -97,17 +97,26 @@ class AppTheme {
       ),
       fontFamily: 'Cairo',
       textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: textPrimary),
-        bodyMedium: TextStyle(color: textPrimary),
-        displayLarge: TextStyle(color: textPrimary),
-        displayMedium: TextStyle(color: textPrimary),
-        displaySmall: TextStyle(color: textPrimary),
-        headlineLarge: TextStyle(color: textPrimary),
-        headlineMedium: TextStyle(color: textPrimary),
-        headlineSmall: TextStyle(color: textPrimary),
-        titleLarge: TextStyle(color: textPrimary),
-        titleMedium: TextStyle(color: textPrimary),
-        titleSmall: TextStyle(color: textPrimary),
+        // Display - Cairo Bold
+        displayLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 57),
+        displayMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 45),
+        displaySmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 36),
+        // Headlines - Cairo Bold
+        headlineLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 32),
+        headlineMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 28),
+        headlineSmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 24),
+        // Titles - Cairo SemiBold
+        titleLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 22),
+        titleMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
+        titleSmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+        // Body - Cairo Regular
+        bodyLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w400, fontSize: 16),
+        bodyMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w400, fontSize: 14),
+        bodySmall: TextStyle(color: textSecondary, fontWeight: FontWeight.w400, fontSize: 12),
+        // Labels - Cairo Medium
+        labelLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w500, fontSize: 14),
+        labelMedium: TextStyle(color: textSecondary, fontWeight: FontWeight.w500, fontSize: 12),
+        labelSmall: TextStyle(color: textMuted, fontWeight: FontWeight.w500, fontSize: 11),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,

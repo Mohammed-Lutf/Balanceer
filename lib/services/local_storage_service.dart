@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/expense_model.dart';
 import '../models/budget_model.dart';
 import '../models/debt_model.dart';
+import '../models/custom_category_model.dart';
 
 /// Local Storage Service using SQLite
 class LocalStorageService {
@@ -20,7 +21,7 @@ class LocalStorageService {
     
     return await openDatabase(
       path,
-      version: 3, // Incremented for pending_deletes table
+      version: 5, // Incremented for expenses custom_category_id
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -33,6 +34,12 @@ class LocalStorageService {
     if (oldVersion < 3) {
       await _createPendingDeletesTable(db);
     }
+    if (oldVersion < 4) {
+      await _createCustomCategoriesTable(db);
+    }
+    if (oldVersion < 5) {
+      await _addCustomCategoryIdToExpenses(db);
+    }
   }
   
   Future<void> _onCreate(Database db, int version) async {
@@ -42,6 +49,7 @@ class LocalStorageService {
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         category TEXT NOT NULL,
+        custom_category_id TEXT,
         amount REAL NOT NULL,
         notes TEXT,
         expense_date TEXT NOT NULL,
@@ -81,6 +89,9 @@ class LocalStorageService {
     
     // Pending deletes table
     await _createPendingDeletesTable(db);
+    
+    // Custom categories table
+    await _createCustomCategoriesTable(db);
   }
 
   Future<void> _createDebtsTable(Database db) async {
@@ -148,12 +159,86 @@ class LocalStorageService {
     );
   }
   
+  Future<void> _addCustomCategoryIdToExpenses(Database db) async {
+    try {
+      await db.execute('ALTER TABLE expenses ADD COLUMN custom_category_id TEXT');
+    } catch (e) {
+      // Column might already exist
+      print('Error adding custom_category_id column: $e');
+    }
+  }
+
   Future<void> clearPendingDeletes(String tableName) async {
     final db = await database;
     await db.delete(
       'pending_deletes',
       where: 'table_name = ?',
       whereArgs: [tableName],
+    );
+  }
+  
+  // ==================== CUSTOM CATEGORIES ====================
+  
+  Future<void> _createCustomCategoriesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS custom_categories (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        icon_name TEXT NOT NULL,
+        color_value INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        is_synced INTEGER DEFAULT 0
+      )
+    ''');
+  }
+  
+  Future<void> insertCustomCategory(CustomCategoryModel category) async {
+    final db = await database;
+    await db.insert(
+      'custom_categories',
+      category.toLocalJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+  
+  Future<List<CustomCategoryModel>> getCustomCategories(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'custom_categories',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'created_at DESC',
+    );
+    return maps.map((e) => CustomCategoryModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<List<CustomCategoryModel>> getUnsyncedCustomCategories(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'custom_categories',
+      where: 'user_id = ? AND is_synced = 0',
+      whereArgs: [userId],
+    );
+    return maps.map((e) => CustomCategoryModel.fromLocalJson(e)).toList();
+  }
+  
+  Future<void> markCustomCategoryAsSynced(String id) async {
+    final db = await database;
+    await db.update(
+      'custom_categories',
+      {'is_synced': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  Future<void> deleteCustomCategory(String id) async {
+    final db = await database;
+    await db.delete(
+      'custom_categories',
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
   

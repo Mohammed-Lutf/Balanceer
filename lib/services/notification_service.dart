@@ -12,8 +12,23 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    // Initializing TimeZone
+    // Initialize TimeZone
     tz.initializeTimeZones();
+    
+    // Set local timezone based on device offset
+    final now = DateTime.now();
+    final offset = now.timeZoneOffset;
+    final hours = offset.inHours;
+    final minutes = (offset.inMinutes % 60).abs();
+    final sign = offset.isNegative ? '-' : '+';
+    final offsetName = 'Etc/GMT${offset.isNegative ? '+' : '-'}${hours.abs()}';
+    
+    try {
+      tz.setLocalLocation(tz.getLocation(offsetName));
+    } catch (e) {
+      // Fallback to UTC if location not found
+      tz.setLocalLocation(tz.UTC);
+    }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -102,12 +117,33 @@ class NotificationService {
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    // Get the local timezone location
+    final String timeZoneName = DateTime.now().timeZoneName;
+    tz.Location location;
+    
+    try {
+      // Try to get the local timezone
+      location = tz.getLocation(timeZoneName);
+    } catch (e) {
+      // Fallback to UTC offset-based calculation
+      location = tz.local;
+    }
+    
+    final tz.TZDateTime now = tz.TZDateTime.now(location);
+    tz.TZDateTime scheduledDate = tz.TZDateTime(
+      location,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+    
+    // If the scheduled time has already passed today, schedule for tomorrow
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
+    
     return scheduledDate;
   }
 

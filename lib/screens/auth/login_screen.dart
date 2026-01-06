@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/local_storage_service.dart';
 import '../../services/supabase_service.dart';
+import '../../services/sync_service.dart';
 import 'register_screen.dart';
 import '../home/home_screen.dart';
 
@@ -64,6 +66,15 @@ class _LoginScreenState extends State<LoginScreen> {
     
     if (result.success) {
       if (mounted) {
+        // Sync data from cloud after successful login
+        try {
+          final syncService = Provider.of<SyncService>(context, listen: false);
+          await syncService.syncAll();
+        } catch (e) {
+          // Sync error shouldn't block navigation
+          debugPrint('Sync after login failed: $e');
+        }
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -85,6 +96,14 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
     
     if (result.success && mounted) {
+      // Sync data from cloud after successful Google login
+      try {
+        final syncService = Provider.of<SyncService>(context, listen: false);
+        await syncService.syncAll();
+      } catch (e) {
+        debugPrint('Sync after Google login failed: $e');
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('أهلاً بك ${result.user?.userMetadata?['full_name'] ?? ''} 👋'),

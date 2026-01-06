@@ -3,6 +3,7 @@ import '../config/supabase_config.dart';
 import '../models/expense_model.dart';
 import '../models/budget_model.dart';
 import '../models/debt_model.dart';
+import '../models/custom_category_model.dart';
 
 /// Supabase Service for cloud operations
 class SupabaseService {
@@ -177,6 +178,35 @@ class SupabaseService {
   
   Future<void> deleteDebt(String id) async {
     await client.from('debts').delete().eq('id', id);
+  }
+  
+  // ==================== CUSTOM CATEGORIES ====================
+  
+  Future<void> insertCustomCategory(CustomCategoryModel category) async {
+    await client.from('custom_categories').upsert(category.toJson());
+  }
+  
+  Future<void> upsertCustomCategories(List<CustomCategoryModel> categories) async {
+    if (categories.isEmpty) return;
+    await client.from('custom_categories').upsert(
+      categories.map((e) => e.toJson()).toList(),
+    );
+  }
+  
+  Future<List<CustomCategoryModel>> getCustomCategories(String userId) async {
+    final response = await client
+        .from('custom_categories')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+    
+    return (response as List)
+        .map((e) => CustomCategoryModel.fromJson(e))
+        .toList();
+  }
+  
+  Future<void> deleteCustomCategory(String id) async {
+    await client.from('custom_categories').delete().eq('id', id);
   }
   
   // ==================== REAL-TIME ====================

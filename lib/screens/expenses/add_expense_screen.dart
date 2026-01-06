@@ -7,6 +7,8 @@ import '../../models/expense_model.dart';
 import '../../models/budget_model.dart';
 import '../../services/sync_service.dart';
 import '../../services/notification_service.dart';
+import '../../models/custom_category_model.dart';
+import '../categories/manage_categories_screen.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final String userId;
@@ -31,17 +33,28 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _notesController = TextEditingController();
   
   ExpenseCategory _selectedCategory = ExpenseCategory.food;
+  String? _selectedCustomCategoryId; // For custom categories
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
+  List<CustomCategoryModel> _customCategories = [];
 
   @override
   void initState() {
     super.initState();
+    _loadCustomCategories();
     if (widget.expense != null) {
       _amountController.text = widget.expense!.amount.toString();
       _notesController.text = widget.expense!.notes ?? '';
       _selectedCategory = widget.expense!.category;
+      _selectedCustomCategoryId = widget.expense!.customCategoryId;
       _selectedDate = widget.expense!.expenseDate;
+    }
+  }
+
+  Future<void> _loadCustomCategories() async {
+    final categories = await widget.syncService.getCustomCategories(widget.userId);
+    if (mounted) {
+      setState(() => _customCategories = categories);
     }
   }
   
@@ -60,6 +73,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final expense = widget.expense != null 
         ? widget.expense!.copyWith(
             category: _selectedCategory,
+            customCategoryId: _selectedCustomCategoryId,
             amount: double.parse(_amountController.text),
             notes: _notesController.text.isEmpty ? null : _notesController.text,
             expenseDate: _selectedDate,
@@ -68,6 +82,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         : ExpenseModel.create(
             userId: widget.userId,
             category: _selectedCategory,
+            customCategoryId: _selectedCustomCategoryId,
             amount: double.parse(_amountController.text),
             notes: _notesController.text.isEmpty ? null : _notesController.text,
             expenseDate: _selectedDate,
@@ -294,60 +309,127 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   
   Widget _buildCategorySelector() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'الفئة',
-          style: TextStyle(
-            color: AppTheme.textSecondary,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'الفئة',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ManageCategoriesScreen(
+                      syncService: widget.syncService,
+                      userId: widget.userId,
+                    ),
+                  ),
+                );
+                _loadCustomCategories();
+              },
+              icon: const Icon(Iconsax.setting_2, size: 16),
+              label: const Text('إدارة الفئات'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: ExpenseCategory.values.map((category) {
-            final isSelected = _selectedCategory == category;
-            final color = AppTheme.categoryColors[category.key] ?? AppTheme.textMuted;
-            
-            return GestureDetector(
-              onTap: () => setState(() => _selectedCategory = category),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected ? color.withValues(alpha: 0.3) : AppTheme.cardBackground,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected ? color : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _getCategoryIcon(category),
-                      color: isSelected ? color : AppTheme.textMuted,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      category.arabicName,
-                      style: TextStyle(
-                        color: isSelected ? color : AppTheme.textSecondary,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            ...ExpenseCategory.values.map((category) {
+              final isSelected = _selectedCategory == category && _selectedCustomCategoryId == null;
+              final color = AppTheme.categoryColors[category.key] ?? AppTheme.primaryColor;
+              return _buildCategoryChip(
+                label: category.arabicName,
+                key: category.key,
+                isSelected: isSelected,
+                customColor: color,
+                onTap: () => setState(() {
+                  _selectedCategory = category;
+                  _selectedCustomCategoryId = null;
+                }),
+              );
+            }),
+            ..._customCategories.map((category) {
+              final isSelected = _selectedCustomCategoryId == category.id;
+              // Map custom category to "other" expense category for logic purposes, but track separate ID
+              return _buildCategoryChip(
+                label: category.name,
+                key: category.iconName, // Use icon name or generate key
+                isCustom: true,
+                customColor: Color(category.colorValue),
+                isSelected: isSelected,
+                onTap: () => setState(() {
+                  _selectedCategory = ExpenseCategory.other; 
+                  _selectedCustomCategoryId = category.id;
+                }),
+              );
+            }),
+          ],
         ),
       ],
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildCategoryChip({
+    required String label,
+    required String key,
+    required bool isSelected,
+    required VoidCallback onTap,
+    bool isCustom = false,
+    Color? customColor,
+  }) {
+    final color = customColor ?? AppTheme.categoryColors[key] ?? AppTheme.primaryColor;
+    
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? color : AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.white.withValues(alpha: 0.1),
+            width: 1.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              const Icon(Icons.check, color: Colors.white, size: 16),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppTheme.textSecondary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
   
   Widget _buildDateSelector() {

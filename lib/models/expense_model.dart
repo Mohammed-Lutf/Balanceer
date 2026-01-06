@@ -28,6 +28,7 @@ class ExpenseModel {
   final String id;
   final String userId;
   final ExpenseCategory category;
+  final String? customCategoryId; // New field for custom categories
   final double amount;
   final String? notes;
   final DateTime expenseDate;
@@ -38,6 +39,7 @@ class ExpenseModel {
     required this.id,
     required this.userId,
     required this.category,
+    this.customCategoryId,
     required this.amount,
     this.notes,
     required this.expenseDate,
@@ -48,6 +50,7 @@ class ExpenseModel {
   factory ExpenseModel.create({
     required String userId,
     required ExpenseCategory category,
+    String? customCategoryId,
     required double amount,
     String? notes,
     DateTime? expenseDate,
@@ -56,6 +59,7 @@ class ExpenseModel {
       id: const Uuid().v4(),
       userId: userId,
       category: category,
+      customCategoryId: customCategoryId,
       amount: amount,
       notes: notes,
       expenseDate: expenseDate ?? DateTime.now(),
@@ -69,6 +73,7 @@ class ExpenseModel {
       id: json['id'] as String,
       userId: json['user_id'] as String,
       category: ExpenseCategory.fromKey(json['category'] as String),
+      customCategoryId: json['custom_category_id'] as String?,
       amount: (json['amount'] as num).toDouble(),
       notes: json['notes'] as String?,
       expenseDate: DateTime.parse(json['expense_date'] as String),
@@ -82,6 +87,7 @@ class ExpenseModel {
       'id': id,
       'user_id': userId,
       'category': category.key,
+      'custom_category_id': customCategoryId,
       'amount': amount,
       'notes': notes,
       'expense_date': expenseDate.toIso8601String().split('T')[0],
@@ -101,6 +107,7 @@ class ExpenseModel {
       id: json['id'] as String,
       userId: json['user_id'] as String,
       category: ExpenseCategory.fromKey(json['category'] as String),
+      customCategoryId: json['custom_category_id'] as String?,
       amount: (json['amount'] as num).toDouble(),
       notes: json['notes'] as String?,
       expenseDate: DateTime.parse(json['expense_date'] as String),
@@ -113,6 +120,7 @@ class ExpenseModel {
     String? id,
     String? userId,
     ExpenseCategory? category,
+    String? customCategoryId,
     double? amount,
     String? notes,
     DateTime? expenseDate,
@@ -123,6 +131,7 @@ class ExpenseModel {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       category: category ?? this.category,
+      customCategoryId: customCategoryId ?? this.customCategoryId,
       amount: amount ?? this.amount,
       notes: notes ?? this.notes,
       expenseDate: expenseDate ?? this.expenseDate,

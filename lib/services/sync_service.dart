@@ -5,6 +5,7 @@ import 'supabase_service.dart';
 import '../models/expense_model.dart';
 import '../models/budget_model.dart';
 import '../models/debt_model.dart';
+import '../models/custom_category_model.dart';
 
 /// Sync Service - Handles synchronization between local and cloud storage
 class SyncService {
@@ -47,6 +48,7 @@ class SyncService {
       await _syncExpenses(user.id);
       await _syncBudgets(user.id);
       await _syncDebts(user.id);
+      await _syncCustomCategories(user.id);
     } catch (e) {
       // Log error but don't throw
       print('Sync error: $e');
@@ -54,6 +56,78 @@ class SyncService {
       _isSyncing = false;
     }
   }
+
+  Future<void> _syncCustomCategories(String userId) async {
+    // Step 1: Process pending deletions first
+    final pendingDeletes = await _localStorage.getPendingDeletes('custom_categories');
+    for (final recordId in pendingDeletes) {
+      try {
+        await _supabase.deleteCustomCategory(recordId);
+        await _localStorage.removePendingDelete('custom_categories', recordId);
+      } catch (e) {
+        print('Failed to sync delete for custom category $recordId: $e');
+      }
+    }
+    
+    // Step 2: Get unsynced categories and upload
+    final unsyncedCategories = await _localStorage.getUnsyncedCustomCategories(userId);
+    
+    if (unsyncedCategories.isNotEmpty) {
+      // Upload to Supabase
+      await _supabase.upsertCustomCategories(unsyncedCategories);
+      
+      // Mark as synced locally
+      for (final category in unsyncedCategories) {
+        await _localStorage.markCustomCategoryAsSynced(category.id);
+      }
+    }
+    
+    // Step 3: Download from Supabase (only items not in pending deletes)
+    final remainingPendingDeletes = await _localStorage.getPendingDeletes('custom_categories');
+    final cloudCategories = await _supabase.getCustomCategories(userId);
+    for (final category in cloudCategories) {
+      // Skip if this category is pending deletion
+      if (!remainingPendingDeletes.contains(category.id)) {
+        await _localStorage.insertCustomCategory(category.copyWith(isSynced: true));
+      }
+    }
+  }
+
+  // ==================== CUSTOM CATEGORY OPERATIONS ====================
+
+  Future<void> addCustomCategory(CustomCategoryModel category) async {
+    await _localStorage.insertCustomCategory(category);
+    
+    if (_connectivity.isConnected) {
+      try {
+        await _supabase.insertCustomCategory(category);
+        await _localStorage.markCustomCategoryAsSynced(category.id);
+      } catch (e) {
+        print('Failed to sync custom category: $e');
+      }
+    }
+  }
+
+  Future<void> deleteCustomCategory(String id) async {
+    await _localStorage.deleteCustomCategory(id);
+    
+    if (_connectivity.isConnected) {
+      try {
+        await _supabase.deleteCustomCategory(id);
+      } catch (e) {
+        await _localStorage.addPendingDelete('custom_categories', id);
+        print('Failed to delete custom category from cloud: $e');
+      }
+    } else {
+      await _localStorage.addPendingDelete('custom_categories', id);
+    }
+  }
+  
+  Future<List<CustomCategoryModel>> getCustomCategories(String userId) async {
+    return await _localStorage.getCustomCategories(userId);
+  }
+  
+
   
   Future<void> _syncExpenses(String userId) async {
     // Get unsynced expenses

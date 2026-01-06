@@ -18,6 +18,7 @@ import '../reports/reports_screen.dart';
 import '../auth/login_screen.dart';
 import '../../services/export_service.dart';
 import '../../widgets/charts/pie_chart_widget.dart';
+import '../../widgets/expandable_fab.dart';
 import '../debt/debt_tracker_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -481,63 +482,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
-          
-          const SizedBox(height: 16),
-          
-          // Debt Tracker Entry
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const DebtTrackerScreen()),
-              ).then((_) => _loadData());
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Row(
-                children: [
-                  Icon(Iconsax.personalcard, color: AppTheme.primaryColor),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'مدير الديون (Debt Tracker)',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          'سجل الديون التي لك أو عليك مع تواريخ السداد',
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.arrow_forward_ios, color: AppTheme.textMuted, size: 16),
-                ],
-              ),
-            ),
-          ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.2, end: 0),
         ],
       ),
     );
@@ -1064,33 +1008,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
   
   Widget _buildFAB() {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        shape: BoxShape.circle,
-        boxShadow: AppTheme.glowShadow,
-      ),
-      child: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddExpenseScreen(
-                userId: _userId ?? '',
-                syncService: _syncService,
-              ),
+    return ExpandableFab(
+      onDebtPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DebtTrackerScreen()),
+        ).then((_) => _loadData());
+      },
+      onExpensePressed: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddExpenseScreen(
+              userId: _userId ?? '',
+              syncService: _syncService,
             ),
-          );
-          if (result == true) {
-            _loadData();
-          }
-        },
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: const Icon(Iconsax.add, size: 28),
-      ),
+          ),
+        );
+        if (result == true) {
+          _loadData();
+        }
+      },
     );
   }
   
