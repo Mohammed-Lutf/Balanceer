@@ -9,6 +9,7 @@ import '../../services/sync_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/local_storage_service.dart';
 import '../../services/connectivity_service.dart';
+import '../../services/export_service.dart';
 import 'add_debt_screen.dart';
 
 class DebtTrackerScreen extends StatefulWidget {
@@ -157,6 +158,32 @@ class _DebtTrackerScreenState extends State<DebtTrackerScreen> with SingleTicker
       appBar: AppBar(
         title: const Text('مدير الديون'),
         actions: [
+          // Export Button
+          IconButton(
+            icon: const Icon(Iconsax.export_1, color: AppTheme.textSecondary, size: 20),
+            onPressed: () async {
+              if (_debts.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('لا توجد بيانات للتصدير')),
+                );
+                return;
+              }
+              try {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('جاري إعداد التقرير...')),
+                );
+                await ExportService.exportDebtsToPdf(
+                  userName: 'مستخدم Balanceer',
+                  debts: _debts,
+                  currency: 'ر.س', // Should ideally get this from provider
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('فشل التصدير: $e')),
+                );
+              }
+            },
+          ),
           // Sync status indicator
           Padding(
             padding: const EdgeInsets.only(left: 16),

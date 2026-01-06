@@ -353,9 +353,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
               ),
             ).animate().fadeIn(delay: 900.ms).scale(delay: 900.ms),
+
+            const SizedBox(height: 24),
+            
+            _buildPrivacyPolicyLink(),
           ],
         ),
       ),
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildPrivacyPolicyLink() {
+    return Center(
+      child: TextButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('سيتم إضافة الرابط قريباً')),
+          );
+        },
+        child: Text(
+          'سياسة الخصوصية',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 12,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 1100.ms);
   }
 }

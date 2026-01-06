@@ -272,6 +272,28 @@ class AuthService {
   }
 
   
+  /// Delete Account and all data
+  Future<void> deleteAccount() async {
+    final userId = await getUserId();
+    if (userId == null) return;
+    
+    // 1. Delete remote data if connected
+    if (_connectivity.isConnected && !await isGuestSession()) {
+      try {
+        await _supabase.deleteAllData(userId);
+      } catch (e) {
+        // Continue to cleanup local data even if remote fails (best effort)
+        print('Error deleting remote data: $e');
+      }
+    }
+    
+    // 2. Clear all local data
+    await _localStorage.clearAllData();
+    
+    // 3. Sign out (this clears session)
+    await signOut();
+  }
+
   /// Sign out
   Future<void> signOut() async {
     // Check if guest
@@ -350,6 +372,25 @@ class AuthService {
     }
     return message;
   }
+
+  /// Reset Password
+  Future<AuthResult> resetPassword(String email) async {
+    if (!_connectivity.isConnected) {
+      return AuthResult.error('لا يوجد اتصال بالإنترنت');
+    }
+
+    try {
+      await _supabase.client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'balanceer://reset-password',
+      );
+      return AuthResult.successWithMessage('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
+    } on AuthException catch (e) {
+      return AuthResult.error(_getArabicError(e.message));
+    } catch (e) {
+      return AuthResult.error('حدث خطأ غير متوقع');
+    }
+  }
 }
 
 /// Auth Result
@@ -359,6 +400,7 @@ class AuthResult {
   final String? userId;
   final String? email;
   final String? error;
+  final String? message; // Added for success messages
   final bool isOffline;
   final bool isGuest;
 
@@ -368,6 +410,7 @@ class AuthResult {
     this.userId,
     this.email,
     this.error,
+    this.message,
     this.isOffline = false,
     this.isGuest = false,
   });
@@ -377,6 +420,11 @@ class AuthResult {
     user: user,
     userId: user.id,
     email: user.email,
+  );
+
+  factory AuthResult.successWithMessage(String msg) => AuthResult._(
+    success: true,
+    message: msg,
   );
   
   factory AuthResult.offlineSuccess(String userId, String email) => AuthResult._(

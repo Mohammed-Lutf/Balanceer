@@ -234,6 +234,20 @@ class SupabaseService {
         .subscribe();
   }
   
+  // ==================== ACCOUNT MANAGMENT ====================
+
+  Future<void> deleteAllData(String userId) async {
+    // Delete all user related data from all tables
+    try {
+      await client.from('expenses').delete().eq('user_id', userId);
+      await client.from('budgets').delete().eq('user_id', userId);
+      await client.from('debts').delete().eq('user_id', userId);
+      await client.from('custom_categories').delete().eq('user_id', userId);
+    } catch (e) {
+      throw Exception('Failed to delete user data: $e');
+    }
+  }
+
   void unsubscribe(RealtimeChannel channel) {
     client.removeChannel(channel);
   }

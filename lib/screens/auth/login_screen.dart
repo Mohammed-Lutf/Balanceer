@@ -138,6 +138,65 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
   }
+
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        title: const Text('استعادة كلمة المرور'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              textDirection: TextDirection.ltr,
+              decoration: const InputDecoration(
+                labelText: 'البريد الإلكتروني',
+                hintText: 'example@email.com',
+                prefixIcon: Icon(Iconsax.sms, size: 20),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty || !email.contains('@')) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('بريد إلكتروني غير صحيح')),
+                );
+                return;
+              }
+              Navigator.pop(context);
+              final result = await _authService.resetPassword(email);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(result.success ? result.message! : result.error!),
+                    backgroundColor: result.success ? Colors.green : AppTheme.accentRed,
+                  ),
+                );
+              }
+            },
+            child: const Text('إرسال'),
+          ),
+        ],
+      ),
+    );
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -170,6 +229,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   // Register Link
                   _buildRegisterLink(),
+                  
+                  // Privacy Policy
+                  _buildPrivacyPolicyLink(),
                 ],
               ),
             ),
@@ -300,7 +362,19 @@ class _LoginScreenState extends State<LoginScreen> {
               },
             ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.1, end: 0),
             
-            const SizedBox(height: 24),
+            // Forgot Password
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _showForgotPasswordDialog,
+                child: const Text(
+                  'نسيت كلمة المرور؟',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                ),
+              ),
+            ).animate().fadeIn(delay: 650.ms),
+            
+            const SizedBox(height: 16),
             
             // Error Message
             if (_errorMessage != null)
@@ -472,5 +546,27 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ],
     ).animate().fadeIn(delay: 800.ms);
+  }
+
+  Widget _buildPrivacyPolicyLink() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: TextButton(
+        onPressed: () {
+          // TODO: Open Privacy Policy URL
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('سيتم إضافة الرابط قريباً')),
+          );
+        },
+        child: Text(
+          'سياسة الخصوصية',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 12,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 1000.ms);
   }
 }

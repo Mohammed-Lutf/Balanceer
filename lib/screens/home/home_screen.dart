@@ -968,13 +968,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 },
               ),
             
+            
+            _buildSettingItem(
+              icon: Iconsax.lock,
+              title: 'سياسة الخصوصية',
+              subtitle: 'الشروط والأحكام',
+              onTap: () async {
+                  // TODO: Open URL
+                  // const url = 'https://balanceer-app.com/privacy';
+                  // if (await canLaunchUrl(Uri.parse(url))) {
+                  //   await launchUrl(Uri.parse(url));
+                  // }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('سيتم إضافة الرابط قريباً')),
+                  );
+              },
+            ),
+            
             const SizedBox(height: 24),
             
             _buildSettingItem(
               icon: Iconsax.logout,
               title: 'تسجيل الخروج',
               subtitle: 'الخروج من الحساب',
-              isDestructive: true,
+              isDestructive: false,
               onTap: () async {
                 await _authService.signOut();
                 if (mounted) {
@@ -985,6 +1002,56 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 }
               },
             ),
+            
+            const SizedBox(height: 12),
+            
+            if (!_isGuest)
+              _buildSettingItem(
+                icon: Iconsax.trash,
+                title: 'حذف الحساب',
+                subtitle: 'حذف البيانات والحساب نهائياً',
+                isDestructive: true,
+                onTap: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: AppTheme.cardBackground,
+                      title: const Text('حذف الحساب نهائياً؟'),
+                      content: const Text(
+                        'هل أنت متأكد من رغبتك في حذف الحساب؟\nسيتم حذف جميع بياناتك المسجلة (المصاريف، الميزانيات، الديون) ولا يمكن استرجاعها.',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('إلغاء'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('حذف الحساب', style: TextStyle(color: AppTheme.accentRed)),
+                        ),
+                      ],
+                    ),
+                  );
+                  
+                  if (confirm == true) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('جاري حذف الحساب...')),
+                      );
+                    }
+                    
+                    await _authService.deleteAccount();
+                    
+                    if (mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    }
+                  }
+                },
+              ),
           ],
         ),
       ),
@@ -1105,30 +1172,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   
-  Widget _buildFAB() {
-    return ExpandableFab(
-      onDebtPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DebtTrackerScreen()),
-        ).then((_) => _loadData());
-      },
-      onExpensePressed: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AddExpenseScreen(
-              userId: _userId ?? '',
-              syncService: _syncService,
-            ),
-          ),
-        );
-        if (result == true) {
-          _loadData();
-        }
-      },
-    );
-  }
+
   
   void _showExportOptions() {
     showModalBottomSheet(

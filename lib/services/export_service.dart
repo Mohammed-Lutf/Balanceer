@@ -136,4 +136,67 @@ class ExportService {
       await Share.shareXFiles([XFile(file.path)], text: 'بيانات مصاريف شهر $monthName $year');
     }
   }
+  static Future<void> exportDebtsToPdf({
+    required String userName,
+    required List<DebtModel> debts,
+    required String currency,
+  }) async {
+    try {
+      final pdf = pw.Document();
+      final font = await PdfGoogleFonts.cairoRegular();
+      final boldFont = await PdfGoogleFonts.cairoBold();
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          theme: pw.ThemeData.withFont(base: font, bold: boldFont),
+          textDirection: pw.TextDirection.rtl,
+          build: (pw.Context context) {
+            return [
+              pw.Header(
+                level: 0,
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('تقرير الديون', style: pw.TextStyle(fontSize: 24, font: boldFont)),
+                    pw.Text('Balanceer', style: pw.TextStyle(fontSize: 20, color: PdfColors.blue)),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('المستخدِم: $userName'),
+              pw.Text('تاريخ التقرير: ${intl.DateFormat('yyyy-MM-dd').format(DateTime.now())}'),
+              pw.SizedBox(height: 30),
+              
+              pw.Text('الديون', style: pw.TextStyle(fontSize: 18, font: boldFont)),
+              pw.SizedBox(height: 10),
+              
+              pw.TableHelper.fromTextArray(
+                headers: ['النوع', 'الاسم', 'المبلغ', 'التاريخ', 'الحالة'],
+                data: debts.map((d) => [
+                  d.type == DebtType.credit ? 'دين لي' : 'دين علي',
+                  d.personName,
+                  '${d.amount.toStringAsFixed(2)} $currency',
+                  intl.DateFormat('yyyy-MM-dd').format(d.debtDate),
+                  d.isPaid ? 'تم السداد' : 'غير مسدد',
+                ]).toList(),
+                headerStyle: pw.TextStyle(font: boldFont, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.blue),
+                cellAlignment: pw.Alignment.centerRight,
+              ),
+            ];
+          },
+        ),
+      );
+
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/Balanceer_Debts_${DateTime.now().millisecondsSinceEpoch}.pdf");
+      await file.writeAsBytes(await pdf.save());
+
+      await Share.shareXFiles([XFile(file.path)], text: 'تقرير الديون - Balanceer');
+    } catch (e) {
+      print('Error exporting Debts PDF: $e');
+      rethrow;
+    }
+  }
 }
