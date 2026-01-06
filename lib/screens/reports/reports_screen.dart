@@ -169,16 +169,33 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
       return const Center(child: CircularProgressIndicator());
     }
     
-    // Group by category
-    final categoryTotals = <ExpenseCategory, double>{};
+    // Group by display name for custom category support
+    final chartDataMap = <String, ExpenseChartData>{};
+    
     for (final expense in _monthlyExpenses) {
-      categoryTotals[expense.category] = 
-          (categoryTotals[expense.category] ?? 0) + expense.amount;
+      final key = expense.displayName; // Group by display name
+      final currentData = chartDataMap[key];
+      
+      if (currentData != null) {
+        chartDataMap[key] = ExpenseChartData(
+          label: key,
+          amount: currentData.amount + expense.amount,
+          color: currentData.color,
+          icon: currentData.icon,
+        );
+      } else {
+        chartDataMap[key] = ExpenseChartData(
+          label: key,
+          amount: expense.amount,
+          color: expense.displayColor ?? AppTheme.categoryColors[expense.category.key] ?? AppTheme.textMuted,
+          icon: expense.displayIcon,
+        );
+      }
     }
     
     // Sort by amount
-    final sortedCategories = categoryTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final sortedData = chartDataMap.values.toList()
+      ..sort((a, b) => b.amount.compareTo(a.amount));
     
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -220,7 +237,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           const SizedBox(height: 24),
           
           // Pie Chart
-          if (categoryTotals.isNotEmpty) ...[
+          if (_totalMonthly > 0) ...[
             const Text(
               'توزيع حسب الفئة',
               style: TextStyle(
@@ -234,7 +251,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               height: 200,
               padding: const EdgeInsets.all(16),
               decoration: AppTheme.glassDecoration,
-              child: _buildPieChart(categoryTotals),
+              child: ExpensePieChart(
+                data: sortedData,
+                totalExpenses: _totalMonthly,
+              ),
             ).animate().fadeIn(delay: 200.ms),
           ],
           
@@ -251,7 +271,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           ),
           const SizedBox(height: 12),
           
-          if (sortedCategories.isEmpty)
+          if (sortedData.isEmpty)
             Container(
               padding: const EdgeInsets.all(32),
               decoration: AppTheme.glassDecoration,
@@ -263,16 +283,15 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               ),
             )
           else
-            ...sortedCategories.asMap().entries.map((entry) {
+            ...sortedData.asMap().entries.map((entry) {
               final index = entry.key;
-              final item = entry.value;
+              final data = entry.value;
               final percentage = (_totalMonthly > 0) 
-                  ? (item.value / _totalMonthly * 100) 
+                  ? (data.amount / _totalMonthly * 100) 
                   : 0;
               
               return _buildCategoryItem(
-                item.key,
-                item.value,
+                data,
                 percentage.toDouble(),
               ).animate().fadeIn(delay: (300 + index * 50).ms);
             }),
@@ -283,40 +302,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     );
   }
   
-  Widget _buildPieChart(Map<ExpenseCategory, double> data) {
-    final entries = data.entries.toList();
-    
-    return PieChart(
-      PieChartData(
-        sectionsSpace: 2,
-        centerSpaceRadius: 35,
-        sections: entries.map((entry) {
-          final color = AppTheme.categoryColors[entry.key.key] ?? AppTheme.textMuted;
-          final percentage = (entry.value / _totalMonthly * 100);
-          
-          return PieChartSectionData(
-            color: color,
-            value: entry.value,
-            title: percentage >= 10 ? '${percentage.toStringAsFixed(0)}%' : '',
-            radius: 45,
-            titleStyle: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+  // Removed _buildPieChart as it's replaced by ExpensePieChart widget
   
   Widget _buildCategoryItem(
-    ExpenseCategory category,
-    double amount,
+    ExpenseChartData data,
     double percentage,
   ) {
-    final color = AppTheme.categoryColors[category.key] ?? AppTheme.textMuted;
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -330,12 +321,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
+              color: data.color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              _getCategoryIcon(category),
-              color: color,
+              data.icon,
+              color: data.color,
               size: 22,
             ),
           ),
@@ -345,7 +336,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  category.arabicName,
+                  data.label,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -357,7 +348,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                   child: LinearProgressIndicator(
                     value: (percentage / 100).clamp(0, 1),
                     backgroundColor: Colors.white.withValues(alpha: 0.1),
-                    valueColor: AlwaysStoppedAnimation(color),
+                    valueColor: AlwaysStoppedAnimation(data.color),
                     minHeight: 6,
                   ),
                 ),
@@ -369,7 +360,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${_numberFormat.format(amount)} ${widget.currency.symbol}',
+                '${_numberFormat.format(data.amount)} ${widget.currency.symbol}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -378,7 +369,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               Text(
                 '${percentage.toStringAsFixed(1)}%',
                 style: TextStyle(
-                  color: color,
+                  color: data.color,
                   fontSize: 12,
                 ),
               ),

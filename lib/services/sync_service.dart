@@ -145,8 +145,34 @@ class SyncService {
     
     // Download from Supabase and merge
     final cloudExpenses = await _supabase.getExpenses(userId);
+    
+    // Auto-create missing custom categories from denormalized expense data
+    final existingCategories = await _localStorage.getCustomCategories(userId);
+    final existingCategoryIds = existingCategories.map((c) => c.id).toSet();
+    
     for (final expense in cloudExpenses) {
       await _localStorage.insertExpense(expense.copyWith(isSynced: true));
+      
+      // Check if this expense has a custom category that doesn't exist locally
+      if (expense.customCategoryId != null && 
+          !existingCategoryIds.contains(expense.customCategoryId) &&
+          expense.customCategoryName != null &&
+          expense.customCategoryIcon != null &&
+          expense.customCategoryColor != null) {
+            
+        final newCategory = CustomCategoryModel(
+          id: expense.customCategoryId!,
+          userId: userId,
+          name: expense.customCategoryName!,
+          iconName: expense.customCategoryIcon!,
+          colorValue: expense.customCategoryColor!,
+          createdAt: DateTime.now(), // Approximate
+          isSynced: true, // It came from cloud expense, so effectively synced
+        );
+        
+        await _localStorage.insertCustomCategory(newCategory);
+        existingCategoryIds.add(expense.customCategoryId!);
+      }
     }
   }
   

@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../config/theme.dart';
-import '../../models/expense_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../config/theme.dart';
+
+class ExpenseChartData {
+  final String label;
+  final double amount;
+  final Color color;
+  final IconData icon;
+
+  const ExpenseChartData({
+    required this.label,
+    required this.amount,
+    required this.color,
+    required this.icon,
+  });
+}
 
 class ExpensePieChart extends StatefulWidget {
-  final Map<ExpenseCategory, double> categoryTotals;
+  final List<ExpenseChartData> data;
   final double totalExpenses;
   
   const ExpensePieChart({
     super.key,
-    required this.categoryTotals,
+    required this.data,
     required this.totalExpenses,
   });
 
@@ -23,7 +36,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
   
   @override
   Widget build(BuildContext context) {
-    if (widget.categoryTotals.isEmpty) {
+    if (widget.data.isEmpty) {
       return const Center(
         child: Text(
           'لا توجد بيانات',
@@ -73,20 +86,17 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
   }
   
   List<PieChartSectionData> _buildSections() {
-    final entries = widget.categoryTotals.entries.toList();
-    
-    return entries.asMap().entries.map((entry) {
+    return widget.data.asMap().entries.map((entry) {
       final index = entry.key;
-      final categoryEntry = entry.value;
+      final data = entry.value;
       final isTouched = index == _touchedIndex;
       final percentage = widget.totalExpenses > 0 
-          ? (categoryEntry.value / widget.totalExpenses * 100) 
+          ? (data.amount / widget.totalExpenses * 100) 
           : 0.0;
-      final color = AppTheme.categoryColors[categoryEntry.key.key] ?? AppTheme.textMuted;
       
       return PieChartSectionData(
-        color: color,
-        value: categoryEntry.value,
+        color: data.color,
+        value: data.amount,
         title: isTouched ? '${percentage.toStringAsFixed(1)}%' : '',
         radius: isTouched ? 55 : 45,
         titleStyle: const TextStyle(
@@ -94,28 +104,27 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
-        badgeWidget: isTouched ? _buildBadge(categoryEntry.key) : null,
+        badgeWidget: isTouched ? _buildBadge(data) : null,
         badgePositionPercentageOffset: 1.2,
       );
     }).toList();
   }
   
-  Widget _buildBadge(ExpenseCategory category) {
-    final color = AppTheme.categoryColors[category.key] ?? AppTheme.textMuted;
+  Widget _buildBadge(ExpenseChartData data) {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: color,
+        color: data.color,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.5),
+            color: data.color.withValues(alpha: 0.5),
             blurRadius: 8,
           ),
         ],
       ),
       child: Icon(
-        _getCategoryIcon(category),
+        data.icon,
         color: Colors.white,
         size: 14,
       ),
@@ -123,15 +132,12 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
   }
   
   Widget _buildLegend() {
-    final entries = widget.categoryTotals.entries.toList();
-    
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: entries.take(5).map((entry) {
-        final color = AppTheme.categoryColors[entry.key.key] ?? AppTheme.textMuted;
+      children: widget.data.take(5).map((data) {
         final percentage = widget.totalExpenses > 0
-            ? (entry.value / widget.totalExpenses * 100)
+            ? (data.amount / widget.totalExpenses * 100)
             : 0.0;
         
         return Padding(
@@ -142,14 +148,14 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: color,
+                  color: data.color,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  entry.key.arabicName,
+                  data.label,
                   style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 11,
@@ -160,7 +166,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
               Text(
                 '${percentage.toStringAsFixed(0)}%',
                 style: TextStyle(
-                  color: color,
+                  color: data.color,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
@@ -170,26 +176,5 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
         );
       }).toList(),
     );
-  }
-  
-  IconData _getCategoryIcon(ExpenseCategory category) {
-    switch (category) {
-      case ExpenseCategory.food:
-        return Icons.restaurant;
-      case ExpenseCategory.transport:
-        return Icons.directions_car;
-      case ExpenseCategory.entertainment:
-        return Icons.sports_esports;
-      case ExpenseCategory.shopping:
-        return Icons.shopping_bag;
-      case ExpenseCategory.bills:
-        return Icons.receipt;
-      case ExpenseCategory.health:
-        return Icons.health_and_safety;
-      case ExpenseCategory.education:
-        return Icons.school;
-      case ExpenseCategory.other:
-        return Icons.more_horiz;
-    }
   }
 }

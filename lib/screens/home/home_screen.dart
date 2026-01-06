@@ -551,12 +551,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return const SizedBox.shrink();
     }
     
-    // Group expenses by category
-    final categoryTotals = <ExpenseCategory, double>{};
+    // Group expenses by display name for charts
+    final chartDataMap = <String, ExpenseChartData>{};
+    
     for (final expense in _expenses) {
-      categoryTotals[expense.category] = 
-          (categoryTotals[expense.category] ?? 0) + expense.amount;
+      final key = expense.displayName;
+      final currentData = chartDataMap[key];
+      
+      if (currentData != null) {
+        chartDataMap[key] = ExpenseChartData(
+          label: key,
+          amount: currentData.amount + expense.amount,
+          color: currentData.color,
+          icon: currentData.icon,
+        );
+      } else {
+        chartDataMap[key] = ExpenseChartData(
+          label: key,
+          amount: expense.amount,
+          color: expense.displayColor ?? AppTheme.categoryColors[expense.category.key] ?? AppTheme.textMuted,
+          icon: expense.displayIcon,
+        );
+      }
     }
+    
+    // Sort by amount
+    final sortedData = chartDataMap.values.toList()
+      ..sort((a, b) => b.amount.compareTo(a.amount));
     
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -577,7 +598,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: SizedBox(
               height: 200,
               child: ExpensePieChart(
-                categoryTotals: categoryTotals,
+                data: sortedData,
                 totalExpenses: _totalExpenses,
               ),
             ),
@@ -659,7 +680,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
   
   Widget _buildExpenseItem(ExpenseModel expense) {
-    final color = AppTheme.categoryColors[expense.category.key] ?? AppTheme.textMuted;
+    final color = expense.displayColor ?? AppTheme.categoryColors[expense.category.key] ?? AppTheme.textMuted;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -681,7 +702,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              _getCategoryIcon(expense.category),
+              expense.displayIcon,
               color: color,
             ),
           ),
@@ -691,7 +712,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  expense.category.arabicName,
+                  expense.displayName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

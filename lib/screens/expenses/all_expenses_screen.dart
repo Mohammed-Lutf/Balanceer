@@ -129,7 +129,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
   }
 
   Widget _buildExpenseItem(ExpenseModel expense) {
-    final color = AppTheme.categoryColors[expense.category.key] ?? AppTheme.textMuted;
+    final color = expense.displayColor ?? AppTheme.categoryColors[expense.category.key] ?? AppTheme.textMuted;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -151,7 +151,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              _getCategoryIcon(expense.category),
+              expense.displayIcon,
               color: color,
             ),
           ),
@@ -161,7 +161,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  expense.category.arabicName,
+                  expense.displayName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -226,26 +226,5 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
         ],
       ),
     );
-  }
-
-  IconData _getCategoryIcon(ExpenseCategory category) {
-    switch (category) {
-      case ExpenseCategory.food:
-        return Iconsax.coffee;
-      case ExpenseCategory.transport:
-        return Iconsax.car;
-      case ExpenseCategory.entertainment:
-        return Iconsax.game;
-      case ExpenseCategory.shopping:
-        return Iconsax.shopping_bag;
-      case ExpenseCategory.bills:
-        return Iconsax.receipt_1;
-      case ExpenseCategory.health:
-        return Iconsax.health;
-      case ExpenseCategory.education:
-        return Iconsax.book;
-      case ExpenseCategory.other:
-        return Iconsax.more;
-    }
   }
 }

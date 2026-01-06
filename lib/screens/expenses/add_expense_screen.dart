@@ -70,10 +70,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     
     setState(() => _isLoading = true);
 
+    // Find selected custom category details if applicable
+    CustomCategoryModel? customCategory;
+    if (_selectedCustomCategoryId != null) {
+      try {
+        customCategory = _customCategories.firstWhere(
+          (c) => c.id == _selectedCustomCategoryId,
+        );
+      } catch (e) {
+        // Should not happen if logic is correct
+        debugPrint('Error finding custom category: $e');
+      }
+    }
+
     final expense = widget.expense != null 
         ? widget.expense!.copyWith(
             category: _selectedCategory,
             customCategoryId: _selectedCustomCategoryId,
+            customCategoryName: customCategory?.name,
+            customCategoryIcon: customCategory?.iconName,
+            customCategoryColor: customCategory?.colorValue,
             amount: double.parse(_amountController.text),
             notes: _notesController.text.isEmpty ? null : _notesController.text,
             expenseDate: _selectedDate,
@@ -83,6 +99,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             userId: widget.userId,
             category: _selectedCategory,
             customCategoryId: _selectedCustomCategoryId,
+            customCategoryName: customCategory?.name,
+            customCategoryIcon: customCategory?.iconName,
+            customCategoryColor: customCategory?.colorValue,
             amount: double.parse(_amountController.text),
             notes: _notesController.text.isEmpty ? null : _notesController.text,
             expenseDate: _selectedDate,

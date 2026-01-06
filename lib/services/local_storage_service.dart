@@ -21,7 +21,7 @@ class LocalStorageService {
     
     return await openDatabase(
       path,
-      version: 5, // Incremented for expenses custom_category_id
+      version: 6, // Incremented for denormalized custom categories (tables merged)
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -40,6 +40,9 @@ class LocalStorageService {
     if (oldVersion < 5) {
       await _addCustomCategoryIdToExpenses(db);
     }
+    if (oldVersion < 6) {
+      await _addDenormalizedCategoryFields(db);
+    }
   }
   
   Future<void> _onCreate(Database db, int version) async {
@@ -50,6 +53,9 @@ class LocalStorageService {
         user_id TEXT NOT NULL,
         category TEXT NOT NULL,
         custom_category_id TEXT,
+        custom_category_name TEXT,
+        custom_category_icon TEXT,
+        custom_category_color INTEGER,
         amount REAL NOT NULL,
         notes TEXT,
         expense_date TEXT NOT NULL,
@@ -165,6 +171,17 @@ class LocalStorageService {
     } catch (e) {
       // Column might already exist
       print('Error adding custom_category_id column: $e');
+    }
+  }
+
+  Future<void> _addDenormalizedCategoryFields(Database db) async {
+    try {
+      await db.execute('ALTER TABLE expenses ADD COLUMN custom_category_name TEXT');
+      await db.execute('ALTER TABLE expenses ADD COLUMN custom_category_icon TEXT');
+      await db.execute('ALTER TABLE expenses ADD COLUMN custom_category_color INTEGER');
+    } catch (e) {
+      // Columns might already exist
+      print('Error adding denormalized category fields: $e');
     }
   }
 

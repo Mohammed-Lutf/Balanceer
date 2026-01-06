@@ -75,7 +75,7 @@ class ExportService {
                 headers: ['التاريخ', 'الفئة', 'الوصف', 'المبلغ'],
                 data: expenses.map((e) => [
                   intl.DateFormat('yyyy-MM-dd').format(e.expenseDate),
-                  e.category.arabicName,
+                  e.displayName,
                   e.notes ?? '',
                   '${e.amount.toStringAsFixed(2)} $currency',
                 ]).toList(),
@@ -120,7 +120,7 @@ class ExportService {
     for (var e in expenses) {
       sheet.appendRow([
         TextCellValue(intl.DateFormat('yyyy-MM-dd').format(e.expenseDate)),
-        TextCellValue(e.category.arabicName),
+        TextCellValue(e.displayName),
         TextCellValue(e.notes ?? ''),
         DoubleCellValue(e.amount),
       ]);
