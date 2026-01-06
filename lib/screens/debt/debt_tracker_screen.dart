@@ -210,9 +210,10 @@ class _DebtTrackerScreenState extends State<DebtTrackerScreen> with SingleTicker
       floatingActionButton: _userId != null
           ? FloatingActionButton.extended(
               onPressed: () async {
+                final initialType = _tabController.index == 0 ? DebtType.credit : DebtType.debt;
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AddDebtScreen()),
+                  MaterialPageRoute(builder: (context) => AddDebtScreen(initialType: initialType)),
                 );
                 if (result == true) _loadDebts();
               },

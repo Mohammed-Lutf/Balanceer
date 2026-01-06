@@ -11,7 +11,8 @@ import '../../services/local_storage_service.dart';
 
 class AddDebtScreen extends StatefulWidget {
   final DebtModel? debt;
-  const AddDebtScreen({super.key, this.debt});
+  final DebtType? initialType;
+  const AddDebtScreen({super.key, this.debt, this.initialType});
 
   @override
   State<AddDebtScreen> createState() => _AddDebtScreenState();
@@ -40,7 +41,7 @@ class _AddDebtScreenState extends State<AddDebtScreen> {
       text: widget.debt != null ? widget.debt!.amount.toString() : '',
     );
     _notesController = TextEditingController(text: widget.debt?.notes ?? '');
-    _selectedType = widget.debt?.type ?? DebtType.credit;
+    _selectedType = widget.debt?.type ?? widget.initialType ?? DebtType.credit;
     _debtDate = widget.debt?.debtDate ?? DateTime.now();
     _dueDate = widget.debt?.dueDate;
     _paidDate = widget.debt?.paidDate;
