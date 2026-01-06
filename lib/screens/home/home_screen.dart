@@ -1,21 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 import '../../config/theme.dart';
 import '../../models/expense_model.dart';
 import '../../models/budget_model.dart';
-import '../../utils/constants.dart';
+import '../../services/auth_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/local_storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
-import '../../services/auth_service.dart';
 import '../../services/notification_service.dart';
-import '../expenses/add_expense_screen.dart';
-import '../budget/budget_screen.dart';
-import '../reports/reports_screen.dart';
+import '../../widgets/charts/pie_chart_widget.dart';
 import '../auth/login_screen.dart';
+import '../expenses/add_expense_screen.dart';
+import '../expenses/all_expenses_screen.dart';
+import '../budget/budget_screen.dart';
+import '../budget/add_budget_sheet.dart'; // We will create this
+import '../reports/reports_screen.dart';
+import '../../widgets/flashy_fab.dart';
 import '../../services/export_service.dart';
 import '../../widgets/charts/pie_chart_widget.dart';
 import '../../widgets/expandable_fab.dart';
@@ -113,6 +120,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     
     if (_connectivity.isConnected) {
       await _syncService.syncAll();
+      
+      // Reload data after sync to reflect changes immediately
+      _expenses = await _syncService.getExpensesByMonth(_userId!, now.month, now.year);
+      _totalExpenses = _expenses.fold(0, (sum, e) => sum + e.amount);
+      
+      final updatedBudgets = await _syncService.getBudgets(_userId!, now.month, now.year);
+      _budgets = updatedBudgets;
+      _monthlyBudget = updatedBudgets.fold(0, (sum, b) => sum + b.amount);
     }
 
     // Phase 1: Persistent Notification update
@@ -191,7 +206,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Scaffold(
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: _currentIndex == 0 ? _buildFAB() : null,
+      // Use FAB for both Home (0) and Budget (1)
+      floatingActionButton: (_currentIndex == 0 || _currentIndex == 1) ? _buildFAB() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -206,6 +222,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           syncService: _syncService,
           currency: _currency,
           onRefresh: _loadData,
+          // We handle FAB in HomeScreen now, so BudgetScreen doesn't need its own Scaffold floating button
         );
       case 2:
         return ReportsScreen(
@@ -220,9 +237,69 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-
+  Widget _buildFAB() {
+    return FlashyFAB(
+      icon: Iconsax.add,
+      onPressed: () async {
+        if (_currentIndex == 0) {
+          // Add Expense
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddExpenseScreen(
+                userId: _userId ?? '',
+                syncService: _syncService,
+              ),
+            ),
+          );
+          if (result == true) {
+            _loadData();
+          }
+        } else if (_currentIndex == 1) {
+          // Add Budget
+          // We can't access BudgetScreen state directly easily from here to show the dialog
+          // Better approach: Pass a GlobalKey or use a callback if structure allows.
+          // Or strictly for UI requirement: We can just open a Budget Dialog here directly 
+          // passing necessary services, similar to how BudgetScreen does it.
+          _showBudgetDialogFromHome();
+        }
+      },
+    );
+  }
   
-  Widget _buildHomePage() {
+  void _showBudgetDialogFromHome() {
+    // Replicating/Refactoring the budget dialog logic to be accessible here
+    // Since BudgetScreen logic is tightly coupled, a cleaner way might be to 
+    // expose a static method or move the dialog logic to a mixin/widget.
+    // For now, let's keep it simple: Access BudgetScreen state via GlobalKey 
+    // OR just instantiate the add budget sheet here since we have syncService.
+    
+    // Actually, handling it here duplicates code. 
+    // Let's implement a listener or simple event bus? No, too complex.
+    // Let's us a GlobalKey<BudgetScreenState> ? No, BudgetScreen is inside _buildBody.
+    
+    // Simplest robust solution: Just open the Add Budget Logic here.
+    _showAddBudgetSheet();
+  }
+  
+  void _showAddBudgetSheet() {
+    // Minimal implementation of Add Budget Dialog to be launched from Home
+    // Ideally code should be shared.
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddBudgetSheet(
+        userId: _userId ?? '',
+        syncService: _syncService,
+        currency: _currency,
+        onSave: () {
+           // Reload Home Data (which triggers BudgetScreen refresh via onRefresh callback potentially)
+           _loadData();
+        },
+      ),
+    );
+  }
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(

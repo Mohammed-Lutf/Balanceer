@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // Local font defined in pubspec.yaml: Cairo
 
 /// App Theme Configuration - Modern & Premium Design
@@ -95,35 +96,36 @@ class AppTheme {
         surface: surfaceColor,
         error: accentRed,
       ),
-      fontFamily: 'Cairo',
-      textTheme: const TextTheme(
-        // Display - Cairo Bold
-        displayLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 57),
-        displayMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 45),
-        displaySmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 36),
-        // Headlines - Cairo Bold
-        headlineLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 32),
-        headlineMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 28),
-        headlineSmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 24),
-        // Titles - Cairo SemiBold
-        titleLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 22),
-        titleMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
-        titleSmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
-        // Body - Cairo Regular
-        bodyLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w400, fontSize: 16),
-        bodyMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w400, fontSize: 14),
-        bodySmall: TextStyle(color: textSecondary, fontWeight: FontWeight.w400, fontSize: 12),
-        // Labels - Cairo Medium
-        labelLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w500, fontSize: 14),
-        labelMedium: TextStyle(color: textSecondary, fontWeight: FontWeight.w500, fontSize: 12),
-        labelSmall: TextStyle(color: textMuted, fontWeight: FontWeight.w500, fontSize: 11),
+      fontFamily: GoogleFonts.cairo().fontFamily,
+      textTheme: GoogleFonts.cairoTextTheme(
+        const TextTheme(
+          // Display - Cairo Bold
+          displayLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 57),
+          displayMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 45),
+          displaySmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 36),
+          // Headlines - Cairo Bold
+          headlineLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 32),
+          headlineMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 28),
+          headlineSmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 24),
+          // Titles - Cairo SemiBold
+          titleLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 22),
+          titleMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
+          titleSmall: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+          // Body - Cairo Regular
+          bodyLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w400, fontSize: 16),
+          bodyMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w400, fontSize: 14),
+          bodySmall: TextStyle(color: textSecondary, fontWeight: FontWeight.w400, fontSize: 12),
+          // Labels - Cairo Medium
+          labelLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w500, fontSize: 14),
+          labelMedium: TextStyle(color: textSecondary, fontWeight: FontWeight.w500, fontSize: 12),
+          labelSmall: TextStyle(color: textMuted, fontWeight: FontWeight.w500, fontSize: 11),
+        ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: const TextStyle(
-          fontFamily: 'Cairo',
+        titleTextStyle: GoogleFonts.cairo(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: textPrimary,
@@ -145,8 +147,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMedium),
           ),
-          textStyle: const TextStyle(
-            fontFamily: 'Cairo',
+          textStyle: GoogleFonts.cairo(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),

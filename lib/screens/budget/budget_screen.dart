@@ -9,6 +9,7 @@ import '../../models/budget_model.dart';
 import '../../services/sync_service.dart';
 import '../../widgets/charts/bar_chart_widget.dart';
 import '../../utils/constants.dart';
+import 'add_budget_sheet.dart';
 
 class BudgetScreen extends StatefulWidget {
   final String userId;
@@ -104,28 +105,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
               Text(
                 'الميزانية',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                ),
-              ),
-              IconButton(
-                onPressed: _showAddBudgetDialog,
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Iconsax.add,
-                    color: AppTheme.primaryColor,
-                  ),
                 ),
               ),
             ],
@@ -515,168 +499,18 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
   
   void _showAddBudgetDialog({BudgetModel? existingBudget}) {
-    ExpenseCategory selectedCategory = existingBudget != null 
-        ? ExpenseCategory.values.firstWhere(
-            (c) => c.key == existingBudget.category,
-            orElse: () => ExpenseCategory.food
-          )
-        : ExpenseCategory.food;
-        
-    final amountController = TextEditingController(
-      text: existingBudget != null ? existingBudget.amount.toString() : '',
-    );
-    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return Container(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            decoration: const BoxDecoration(
-              color: AppTheme.cardBackground,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  Text(
-                    existingBudget != null ? 'تعديل الميزانية' : 'إضافة ميزانية',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Category Selector
-                  const Text(
-                    'الفئة',
-                    style: TextStyle(color: AppTheme.textSecondary),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ExpenseCategory.values.map((category) {
-                      final isSelected = selectedCategory == category;
-                      final color = AppTheme.categoryColors[category.key]!;
-                      
-                      return GestureDetector(
-                        onTap: () {
-                          setModalState(() => selectedCategory = category);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected 
-                                ? color.withValues(alpha: 0.3) 
-                                : AppTheme.surfaceColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? color : Colors.transparent,
-                            ),
-                          ),
-                          child: Text(
-                            category.arabicName,
-                            style: TextStyle(
-                              color: isSelected ? color : AppTheme.textSecondary,
-                              fontWeight: isSelected 
-                                  ? FontWeight.bold 
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Amount Field
-                  const Text(
-                    'المبلغ',
-                    style: TextStyle(color: AppTheme.textSecondary),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(9),
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                    ],
-                    decoration: InputDecoration(
-                      hintText: '0.00',
-                      suffixText: widget.currency.symbol,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Save Button
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (amountController.text.isEmpty) return;
-                      
-                      final amount = double.tryParse(amountController.text);
-                      if (amount == null || amount <= 0) return;
-                      
-                      final budget = existingBudget != null
-                          ? existingBudget!.copyWith(
-                              amount: amount,
-                              category: selectedCategory.key,
-                              isSynced: false,
-                            )
-                          : BudgetModel.create(
-                              userId: widget.userId,
-                              category: selectedCategory.key,
-                              amount: amount,
-                              month: _selectedMonth,
-                              year: _selectedYear,
-                            );
-                      
-                      await widget.syncService.addBudget(budget);
-                      
-                      if (!context.mounted) return;
-
-                      if (mounted) {
-                        Navigator.pop(context);
-                        _loadData();
-                        widget.onRefresh?.call();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(existingBudget != null ? 'تحديث' : 'حفظ الميزانية'),
-                  ),
-                ],
-              ),
-            ),
-          );
+      builder: (context) => AddBudgetSheet(
+        userId: widget.userId,
+        syncService: widget.syncService,
+        currency: widget.currency,
+        existingBudget: existingBudget,
+        onSave: () {
+          _loadData();
+          widget.onRefresh?.call();
         },
       ),
     );
