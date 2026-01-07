@@ -380,7 +380,7 @@ class AuthService {
     }
 
     try {
-      await _supabase.client.auth.resetPasswordForEmail(
+      await SupabaseService.client.auth.resetPasswordForEmail(
         email,
         redirectTo: 'balanceer://reset-password',
       );

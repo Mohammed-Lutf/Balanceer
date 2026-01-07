@@ -27,6 +27,7 @@ import '../../services/export_service.dart';
 import '../../widgets/charts/pie_chart_widget.dart';
 import '../../widgets/expandable_fab.dart';
 import '../debt/debt_tracker_screen.dart';
+import '../../utils/constants.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -300,6 +301,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
+  Widget _buildHomePage() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(

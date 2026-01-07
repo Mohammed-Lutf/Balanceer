@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart' as intl;
 import '../models/expense_model.dart';
 import '../models/budget_model.dart';
+import '../models/debt_model.dart';
 
 class ExportService {
   static Future<void> exportToPdf({

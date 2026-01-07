@@ -112,8 +112,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   color: Colors.white,
                 ),
               ),
-            ],
-          ),
           const SizedBox(height: 16),
           
           // Month Selector

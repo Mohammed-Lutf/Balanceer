@@ -7,6 +7,7 @@ import '../../config/theme.dart';
 import '../../models/expense_model.dart';
 import '../../services/sync_service.dart';
 import '../../utils/constants.dart';
+import '../../widgets/charts/pie_chart_widget.dart';
 
 class ReportsScreen extends StatefulWidget {
   final String userId;
