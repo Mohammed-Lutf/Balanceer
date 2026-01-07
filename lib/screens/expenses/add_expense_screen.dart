@@ -537,41 +537,39 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
   
   Widget _buildSaveButton() {
-    return SizedBox(
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _saveExpense,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.secondaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _saveExpense,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.secondaryColor,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Iconsax.add_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.expense != null ? 'حفظ التعديلات' : 'حفظ النفقة',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
       ),
+      child: _isLoading
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Iconsax.add_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  widget.expense != null ? 'حفظ التعديلات' : 'حفظ النفقة',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
     ).animate().fadeIn(delay: 500.ms).scale(delay: 500.ms);
   }
   

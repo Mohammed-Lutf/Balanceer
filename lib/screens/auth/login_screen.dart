@@ -403,11 +403,12 @@ class _LoginScreenState extends State<LoginScreen> {
             
             // Login Button
             SizedBox(
-              height: 56,
+              width: double.infinity,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),

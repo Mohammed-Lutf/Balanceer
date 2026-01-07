@@ -325,11 +325,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             
             // Register Button
             SizedBox(
-              height: 56,
+              width: double.infinity,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _register,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),

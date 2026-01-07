@@ -334,13 +334,13 @@ class _AddDebtScreenState extends State<AddDebtScreen> {
               // Save Button
               SizedBox(
                 width: double.infinity,
-                height: 56,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _selectedType == DebtType.credit
                         ? AppTheme.secondaryColor
                         : AppTheme.accentRed,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
