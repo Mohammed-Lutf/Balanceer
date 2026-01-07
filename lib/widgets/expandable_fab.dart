@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax/iconsax.dart';
 import '../../config/theme.dart';
 
-/// Expandable Floating Action Button with animated mini-FABs
+/// Expandable Floating Action Button with animated mini-FABs using Overlay
 class ExpandableFab extends StatefulWidget {
   final VoidCallback onDebtPressed;
   final VoidCallback onExpensePressed;
@@ -22,7 +22,10 @@ class ExpandableFab extends StatefulWidget {
 class _ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _expandAnimation;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
   bool _isOpen = false;
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -40,202 +43,202 @@ class _ExpandableFabState extends State<ExpandableFab> with SingleTickerProvider
 
   @override
   void dispose() {
+    _removeOverlay();
     _controller.dispose();
     super.dispose();
   }
 
   void _toggle() {
+    if (_isOpen) {
+      _close();
+    } else {
+      _open();
+    }
+  }
+
+  void _open() {
     setState(() {
-      _isOpen = !_isOpen;
-      if (_isOpen) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
+      _isOpen = true;
     });
+    _insertOverlay();
+    _controller.forward();
   }
 
   void _close() {
     setState(() {
       _isOpen = false;
-      _controller.reverse();
+    });
+    _controller.reverse().then((_) {
+      if (!_isOpen) {
+        _removeOverlay();
+      }
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 180,
-      height: 220,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        clipBehavior: Clip.none,
-        children: [
-          // Backdrop - closes FAB when tapped
-          if (_isOpen)
+  void _insertOverlay() {
+    _removeOverlay(); // Safety check
+    
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            // Modal barrier to close on tap outside
             Positioned.fill(
               child: GestureDetector(
                 onTap: _close,
                 behavior: HitTestBehavior.translucent,
+                child: Container(color: Colors.transparent),
               ),
             ),
-          
-          // Mini FAB - Add Expense (Top)
-          _buildExpandingAction(
-            index: 1,
-            icon: Iconsax.receipt_add,
-            label: 'إضافة مصروف',
-            color: AppTheme.secondaryColor,
-            onPressed: () {
-              _close();
-              widget.onExpensePressed();
-            },
-          ),
-          
-          // Mini FAB - Debt Manager (Middle)
-          _buildExpandingAction(
-            index: 0,
-            icon: Iconsax.personalcard,
-            label: 'مدير الديون',
-            color: AppTheme.accentBlue,
-            onPressed: () {
-              _close();
-              widget.onDebtPressed();
-            },
-          ),
-          
-          // Main FAB
-          Positioned(
-            bottom: 0,
-            child: _buildMainFab(),
-          ),
-        ],
+            // Menu Items anchored to FAB
+            Positioned(
+              width: 250,
+              height: 250,
+              child: CompositedTransformFollower(
+                link: _layerLink,
+                showWhenUnlinked: false,
+                offset: const Offset(-85, -85), // Center (125) - Center (40) = 85. So -85 to align centers.
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                     // Action 1: Expense (Right)
+                    _buildRadialAction(
+                      angle: 45, // Top Right
+                      distance: 80,
+                      icon: Iconsax.receipt_add,
+                      color: AppTheme.secondaryColor,
+                      onPressed: () {
+                        _close();
+                        widget.onExpensePressed();
+                      },
+                    ),
+                    
+                    // Action 2: Debt (Left)
+                    _buildRadialAction(
+                      angle: 135, // Top Left
+                      distance: 80,
+                      icon: Iconsax.personalcard,
+                      color: AppTheme.accentBlue,
+                      onPressed: () {
+                        _close();
+                        widget.onDebtPressed();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: SizedBox(
+        width: 80, // Matches FlashyFAB
+        height: 80,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            _buildMainFab(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildExpandingAction({
-    required int index,
+  Widget _buildRadialAction({
+    required double angle,
+    required double distance,
     required IconData icon,
-    required String label,
     required Color color,
     required VoidCallback onPressed,
   }) {
-    final double distance = 70.0 + (index * 70.0);
+    final double rad = angle * (math.pi / 180);
     
     return AnimatedBuilder(
       animation: _expandAnimation,
       builder: (context, child) {
-        return Positioned(
-          bottom: _expandAnimation.value * distance + 8,
+        final double progress = _expandAnimation.value;
+        final double offset = distance * progress;
+        final double dx = offset * math.cos(rad);
+        final double dy = -offset * math.sin(rad); // Up is negative
+        
+        return Transform.translate(
+          offset: Offset(dx, dy),
           child: Opacity(
-            opacity: _expandAnimation.value,
+            opacity: progress,
             child: Transform.scale(
-              scale: _expandAnimation.value,
+              scale: progress,
               child: child,
             ),
           ),
         );
       },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Label
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.cardBackground,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Mini FAB
-          FloatingActionButton.small(
-            heroTag: 'fab_$label',
-            onPressed: onPressed,
-            backgroundColor: color,
-            elevation: 4,
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-        ],
-      ).animate(target: _isOpen ? 1 : 0)
-        .slideX(begin: 0.3, end: 0, duration: 200.ms, delay: (index * 50).ms)
-        .fadeIn(duration: 200.ms, delay: (index * 50).ms),
+      child: FloatingActionButton.small(
+        heroTag: 'fab_${angle}_${icon.codePoint}', // Unique tag
+        onPressed: onPressed,
+        backgroundColor: color,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        child: Icon(icon, color: Colors.white, size: 24),
+      ),
     );
   }
 
-  bool _isPressed = false;
-
   Widget _buildMainFab() {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-         setState(() => _isPressed = false);
-         _toggle();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: Container(
-        width: 65,
-        height: 65,
-        decoration: BoxDecoration(
-          gradient: AppTheme.primaryGradient,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.5),
-              blurRadius: 20,
-              spreadRadius: 2,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: AnimatedRotation(
-          duration: const Duration(milliseconds: 300),
-          turns: _isOpen ? 0.125 : 0, // 45 degrees
-          child: Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 32,
+    return Hero(
+      tag: 'fab_hero',
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) {
+           setState(() => _isPressed = false);
+           _toggle();
+        },
+        onTapCancel: () => setState(() => _isPressed = false),
+        child: Container(
+          width: 65,
+          height: 65,
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ),
+          child: AnimatedRotation(
+            duration: const Duration(milliseconds: 300),
+            turns: _isOpen ? 0.125 : 0, // 45 degrees
+            child: Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+        )
+        .animate(target: _isPressed ? 1 : 0)
+        .scaleXY(duration: 100.ms, end: 0.9), // Press effect
       )
-      .animate(target: _isPressed ? 1 : 0)
-      .scaleXY(duration: 100.ms, end: 0.9), // Press effect
-    )
-    .animate(onPlay: (controller) => controller.repeat(reverse: true))
-    .scaleXY(duration: 1.5.seconds, begin: 1.0, end: 1.05, curve: Curves.easeInOut); // Breathing effect
-  }
-}
-
-/// Custom AnimatedBuilder that works with Animation<double>
-class AnimatedBuilder extends AnimatedWidget {
-  final Widget Function(BuildContext context, Widget? child) builder;
-  final Widget? child;
-
-  const AnimatedBuilder({
-    super.key,
-    required Animation<double> animation,
-    required this.builder,
-    this.child,
-  }) : super(listenable: animation);
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, child);
+      .animate(onPlay: (controller) => controller.repeat(reverse: true))
+      .scaleXY(duration: 1.5.seconds, begin: 1.0, end: 1.05, curve: Curves.easeInOut), // Breathing effect
+    );
   }
 }

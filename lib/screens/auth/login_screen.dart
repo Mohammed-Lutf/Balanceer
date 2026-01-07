@@ -448,8 +448,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 24),
             
             // Google Sign In Button
-            SizedBox(
-              height: 56,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 56),
               child: OutlinedButton(
                 onPressed: _isLoading ? null : _loginWithGoogle,
                 style: OutlinedButton.styleFrom(
@@ -457,6 +457,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -472,12 +473,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'تسجيل الدخول عبر Google',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    const Flexible(
+                      child: Text(
+                        'تسجيل الدخول عبر Google',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

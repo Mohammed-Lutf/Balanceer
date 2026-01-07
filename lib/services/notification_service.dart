@@ -3,6 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:home_widget/home_widget.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart'; // For debugPrint
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -95,25 +96,30 @@ class NotificationService {
     required int hour,
     required int minute,
   }) async {
-    await _notificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      _nextInstanceOfTime(hour, minute),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'reminder_channel',
-          'تذكيرات يومية',
-          channelDescription: 'تذكيرات يومية لتسجيل النفقات',
-          importance: Importance.high,
-          priority: Priority.high,
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        _nextInstanceOfTime(hour, minute),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reminder_channel',
+            'تذكيرات يومية',
+            channelDescription: 'تذكيرات يومية لتسجيل النفقات',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      // Fallback or log error to prevent app crash if Exact Alarm permission is missing
+      debugPrint('Error scheduling daily reminder: $e');
+    }
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
@@ -152,40 +158,44 @@ class NotificationService {
     required double totalSpent,
     required String currency,
   }) async {
-    final double remaining = totalBudget - totalSpent;
-    final String status = remaining >= 0 ? 'متبقي' : 'متجاوز بـ';
-    final String amount = (remaining.abs()).toStringAsFixed(2);
+    try {
+      final double remaining = totalBudget - totalSpent;
+      final String status = remaining >= 0 ? 'متبقي' : 'متجاوز بـ';
+      final String amount = (remaining.abs()).toStringAsFixed(2);
 
-    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'persistent_summary_channel',
-      'ملخص الميزانية المستمر',
-      channelDescription: 'يظهر الرصيد المتبقي في لوحة الإشعارات',
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true,
-      autoCancel: false,
-      showWhen: false,
-      onlyAlertOnce: true,
-      icon: '@mipmap/ic_launcher',
-    );
+      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'persistent_summary_channel',
+        'ملخص الميزانية المستمر',
+        channelDescription: 'يظهر الرصيد المتبقي في لوحة الإشعارات',
+        importance: Importance.low,
+        priority: Priority.low,
+        ongoing: true,
+        autoCancel: false,
+        showWhen: false,
+        onlyAlertOnce: true,
+        icon: '@mipmap/ic_launcher',
+      );
 
-    final NotificationDetails platformDetails = NotificationDetails(
-      android: androidDetails,
-    );
+      final NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+      );
 
-    await _notificationsPlugin.show(
-      999, // Static ID for the persistent notification
-      'مــيزانيتي: $status $amount $currency',
-      'إجمالي المصاريف: ${totalSpent.toStringAsFixed(2)} $currency',
-      platformDetails,
-    );
+      await _notificationsPlugin.show(
+        999, // Static ID for the persistent notification
+        'مــيزانيتي: $status $amount $currency',
+        'إجمالي المصاريف: ${totalSpent.toStringAsFixed(2)} $currency',
+        platformDetails,
+      );
 
-    // Update Home Widget data as well
-    await updateHomeWidget(
-      totalBudget: totalBudget,
-      totalSpent: totalSpent,
-      currency: currency,
-    );
+      // Update Home Widget data as well
+      await updateHomeWidget(
+        totalBudget: totalBudget,
+        totalSpent: totalSpent,
+        currency: currency,
+      );
+    } catch (e) {
+      debugPrint('Error showing persistent summary: $e');
+    }
   }
 
   Future<void> updateHomeWidget({

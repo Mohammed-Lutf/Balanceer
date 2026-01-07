@@ -71,109 +71,113 @@ class _AddBudgetSheetState extends State<AddBudgetSheet> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            
-            Text(
-              widget.existingBudget != null ? 'تعديل الميزانية' : 'إضافة ميزانية',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              const SizedBox(height: 20),
+              
+              Text(
+                widget.existingBudget != null ? 'تعديل الميزانية' : 'إضافة ميزانية',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            
-            // Category Selector
-            const Text(
-              'الفئة',
-              style: TextStyle(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: ExpenseCategory.values.map((category) {
-                final isSelected = _selectedCategory == category;
-                final color = AppTheme.categoryColors[category.key]!;
-                
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedCategory = category);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected 
-                          ? color.withValues(alpha: 0.3) 
-                          : AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? color : Colors.transparent,
+              const SizedBox(height: 24),
+              
+              // Category Selector
+              const Text(
+                'الفئة',
+                style: TextStyle(color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ExpenseCategory.values.map((category) {
+                  final isSelected = _selectedCategory == category;
+                  final color = AppTheme.categoryColors[category.key]!;
+                  
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _selectedCategory = category);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected 
+                            ? color.withValues(alpha: 0.3) 
+                            : AppTheme.surfaceColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected ? color : Colors.transparent,
+                        ),
+                      ),
+                      child: Text(
+                        category.arabicName,
+                        style: TextStyle(
+                          color: isSelected ? color : AppTheme.textSecondary,
+                          fontWeight: isSelected 
+                              ? FontWeight.bold 
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      category.arabicName,
-                      style: TextStyle(
-                        color: isSelected ? color : AppTheme.textSecondary,
-                        fontWeight: isSelected 
-                            ? FontWeight.bold 
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-            
-            // Amount Field
-            const Text(
-              'المبلغ',
-              style: TextStyle(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(9),
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-              decoration: InputDecoration(
-                hintText: '0.00',
-                suffixText: widget.currency.symbol,
+                  );
+                }).toList(),
               ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Save Button
-            ElevatedButton(
-              onPressed: _saveBudget,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(height: 20),
+              
+              // Amount Field
+              const Text(
+                'المبلغ',
+                style: TextStyle(color: AppTheme.textSecondary),
               ),
-              child: Text(widget.existingBudget != null ? 'تحديث' : 'حفظ الميزانية'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              TextField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(9),
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                decoration: InputDecoration(
+                  hintText: '0.00',
+                  suffixText: widget.currency.symbol,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Save Button
+              ElevatedButton(
+                onPressed: _saveBudget,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text(widget.existingBudget != null ? 'تحديث' : 'حفظ الميزانية'),
+              ),
+              // Add padding at bottom to ensure content isn't right at the edge
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );

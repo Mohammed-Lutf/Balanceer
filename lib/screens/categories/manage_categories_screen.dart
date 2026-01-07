@@ -258,109 +258,111 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
       ),
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'فئة جديدة',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم الفئة',
-                hintText: 'مثلاً: اشتراكات، صيانة، ...',
-                prefixIcon: Icon(Iconsax.text),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'فئة جديدة',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
-              validator: (value) => 
-                  value?.trim().isEmpty == true ? 'يرجى إدخال اسم الفئة' : null,
-            ),
-            const SizedBox(height: 24),
-            const Text('ختر أيقونة:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 60,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: CategoryIcons.availableIcons.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final iconName = CategoryIcons.availableIcons[index];
-                  final isSelected = _selectedIcon == iconName;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedIcon = iconName),
-                    child: Container(
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: isSelected 
-                            ? Color(_selectedColorValue).withOpacity(0.2) 
-                            : AppTheme.surfaceColor,
-                        shape: BoxShape.circle,
-                        border: isSelected 
-                            ? Border.all(color: Color(_selectedColorValue), width: 2) 
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'اسم الفئة',
+                  hintText: 'مثلاً: اشتراكات، صيانة، ...',
+                  prefixIcon: Icon(Iconsax.text),
+                ),
+                validator: (value) => 
+                    value?.trim().isEmpty == true ? 'يرجى إدخال اسم الفئة' : null,
+              ),
+              const SizedBox(height: 24),
+              const Text('ختر أيقونة:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 60,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: CategoryIcons.availableIcons.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final iconName = CategoryIcons.availableIcons[index];
+                    final isSelected = _selectedIcon == iconName;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedIcon = iconName),
+                      child: Container(
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                              ? Color(_selectedColorValue).withOpacity(0.2) 
+                              : AppTheme.surfaceColor,
+                          shape: BoxShape.circle,
+                          border: isSelected 
+                              ? Border.all(color: Color(_selectedColorValue), width: 2) 
+                              : null,
+                        ),
+                        child: Icon(
+                          _getIconData(iconName),
+                          color: isSelected ? Color(_selectedColorValue) : AppTheme.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text('ختر لوناً:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 50,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: CategoryColors.availableColors.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final colorValue = CategoryColors.availableColors[index];
+                    final isSelected = _selectedColorValue == colorValue;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedColorValue = colorValue),
+                      child: Container(
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: Color(colorValue),
+                          shape: BoxShape.circle,
+                          border: isSelected 
+                              ? Border.all(color: Colors.white, width: 3) 
+                              : null,
+                          boxShadow: isSelected 
+                              ? [BoxShadow(color: Color(colorValue).withOpacity(0.5), blurRadius: 8)] 
+                              : null,
+                        ),
+                        child: isSelected 
+                            ? const Icon(Icons.check, color: Colors.white, size: 20) 
                             : null,
                       ),
-                      child: Icon(
-                        _getIconData(iconName),
-                        color: isSelected ? Color(_selectedColorValue) : AppTheme.textSecondary,
-                        size: 20,
-                      ),
-                    ),
-                  );
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    widget.onAdd(
+                      _nameController.text.trim(),
+                      _selectedIcon,
+                      Color(_selectedColorValue),
+                    );
+                  }
                 },
+                child: const Text('حفظ الفئة'),
               ),
-            ),
-            const SizedBox(height: 24),
-            const Text('ختر لوناً:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 50,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: CategoryColors.availableColors.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final colorValue = CategoryColors.availableColors[index];
-                  final isSelected = _selectedColorValue == colorValue;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedColorValue = colorValue),
-                    child: Container(
-                      width: 40,
-                      decoration: BoxDecoration(
-                        color: Color(colorValue),
-                        shape: BoxShape.circle,
-                        border: isSelected 
-                            ? Border.all(color: Colors.white, width: 3) 
-                            : null,
-                        boxShadow: isSelected 
-                            ? [BoxShadow(color: Color(colorValue).withOpacity(0.5), blurRadius: 8)] 
-                            : null,
-                      ),
-                      child: isSelected 
-                          ? const Icon(Icons.check, color: Colors.white, size: 20) 
-                          : null,
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  widget.onAdd(
-                    _nameController.text.trim(),
-                    _selectedIcon,
-                    Color(_selectedColorValue),
-                  );
-                }
-              },
-              child: const Text('حفظ الفئة'),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

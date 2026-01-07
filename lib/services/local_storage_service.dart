@@ -21,7 +21,7 @@ class LocalStorageService {
     
     return await openDatabase(
       path,
-      version: 6, // Incremented for denormalized custom categories (tables merged)
+      version: 7, // Incremented for settings table
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -42,6 +42,9 @@ class LocalStorageService {
     }
     if (oldVersion < 6) {
       await _addDenormalizedCategoryFields(db);
+    }
+    if (oldVersion < 7) {
+      await _createSettingsTable(db);
     }
   }
   
@@ -89,6 +92,9 @@ class LocalStorageService {
         created_at TEXT NOT NULL
       )
     ''');
+    
+    // Settings table
+    await _createSettingsTable(db);
 
     // Debts table
     await _createDebtsTable(db);
@@ -466,18 +472,18 @@ class LocalStorageService {
   }
   // ==================== SETTINGS (Currency) ====================
 
-  Future<void> saveCurrency(String currencyCode) async {
-    final db = await database;
-    // We'll use user_session table to store app settings for simplicity or create a new one
-    // But since session might be cleared on logout, and settings should persist, 
-    // let's use shared_preferences logic or just a simple key-value table. 
-    // For now, let's CREATE a simple settings table if not exists.
+  Future<void> _createSettingsTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT
       )
     ''');
+  }
+
+  Future<void> saveCurrency(String currencyCode) async {
+    final db = await database;
+    await _createSettingsTable(db); // Ensure exists
     
     await db.insert(
       'settings',

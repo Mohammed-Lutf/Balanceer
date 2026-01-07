@@ -236,6 +236,7 @@ class _DebtTrackerScreenState extends State<DebtTrackerScreen> with SingleTicker
                 ),
       floatingActionButton: _userId != null
           ? FloatingActionButton.extended(
+              heroTag: 'fab_hero',
               onPressed: () async {
                 final initialType = _tabController.index == 0 ? DebtType.credit : DebtType.debt;
                 final result = await Navigator.push(
