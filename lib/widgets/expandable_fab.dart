@@ -179,35 +179,46 @@ class _ExpandableFabState extends State<ExpandableFab> with SingleTickerProvider
     );
   }
 
+  bool _isPressed = false;
+
   Widget _buildMainFab() {
-    return AnimatedBuilder(
-      animation: _expandAnimation,
-      builder: (context, child) {
-        return FloatingActionButton(
-          heroTag: 'main_fab',
-          onPressed: _toggle,
-          backgroundColor: _isOpen 
-              ? AppTheme.accentRed 
-              : AppTheme.primaryColor,
-          elevation: 8,
-          child: AnimatedRotation(
-            duration: const Duration(milliseconds: 300),
-            turns: _isOpen ? 0.125 : 0, // 45 degrees
-            child: Icon(
-              _isOpen ? Icons.close : Icons.add,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-        );
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+         setState(() => _isPressed = false);
+         _toggle();
       },
-    ).animate(
-      onPlay: (controller) => controller.repeat(reverse: true),
-    ).shimmer(
-      duration: 2.seconds,
-      delay: 3.seconds,
-      color: Colors.white.withOpacity(0.3),
-    );
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: Container(
+        width: 65,
+        height: 65,
+        decoration: BoxDecoration(
+          gradient: AppTheme.primaryGradient,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withValues(alpha: 0.5),
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: AnimatedRotation(
+          duration: const Duration(milliseconds: 300),
+          turns: _isOpen ? 0.125 : 0, // 45 degrees
+          child: Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+      )
+      .animate(target: _isPressed ? 1 : 0)
+      .scaleXY(duration: 100.ms, end: 0.9), // Press effect
+    )
+    .animate(onPlay: (controller) => controller.repeat(reverse: true))
+    .scaleXY(duration: 1.5.seconds, begin: 1.0, end: 1.05, curve: Curves.easeInOut); // Breathing effect
   }
 }
 
