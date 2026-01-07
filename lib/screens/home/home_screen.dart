@@ -239,31 +239,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildFAB() {
-    return FlashyFAB(
-      icon: Iconsax.add,
-      onPressed: () async {
-        if (_currentIndex == 0) {
-          // Add Expense
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddExpenseScreen(
-                userId: _userId ?? '',
-                syncService: _syncService,
-              ),
+    if (_currentIndex == 1) {
+      return FlashyFAB(
+        icon: Iconsax.wallet_add,
+        tooltip: 'إضافة ميزانية',
+        onPressed: _showBudgetDialogFromHome,
+      );
+    }
+
+    return ExpandableFab(
+      onExpensePressed: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddExpenseScreen(
+              userId: _userId ?? '',
+              syncService: _syncService,
             ),
-          );
-          if (result == true) {
-            _loadData();
-          }
-        } else if (_currentIndex == 1) {
-          // Add Budget
-          // We can't access BudgetScreen state directly easily from here to show the dialog
-          // Better approach: Pass a GlobalKey or use a callback if structure allows.
-          // Or strictly for UI requirement: We can just open a Budget Dialog here directly 
-          // passing necessary services, similar to how BudgetScreen does it.
-          _showBudgetDialogFromHome();
+          ),
+        );
+        if (result == true) {
+          _loadData();
         }
+      },
+      onDebtPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DebtTrackerScreen()),
+        );
       },
     );
   }
