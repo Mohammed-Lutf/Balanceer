@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/theme.dart';
 import 'services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/local_storage_service.dart';
 import 'services/notification_service.dart';
 import 'services/connectivity_service.dart';
