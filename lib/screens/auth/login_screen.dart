@@ -146,25 +146,27 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.cardBackground,
         title: const Text('استعادة كلمة المرور'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(
-                labelText: 'البريد الإلكتروني',
-                hintText: 'example@email.com',
-                prefixIcon: Icon(Iconsax.sms, size: 20),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                textDirection: TextDirection.ltr,
+                decoration: const InputDecoration(
+                  labelText: 'البريد الإلكتروني',
+                  hintText: 'example@email.com',
+                  prefixIcon: Icon(Iconsax.sms, size: 20),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

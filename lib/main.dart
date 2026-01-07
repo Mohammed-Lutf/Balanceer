@@ -13,6 +13,7 @@ import 'services/sync_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/auth/update_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,7 +84,9 @@ Future<bool> _checkExistingSession() async {
   }
 }
 
-class YouthBudgetApp extends StatelessWidget {
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+class YouthBudgetApp extends StatefulWidget {
   final bool showOnboarding;
   final bool hasSession;
   
@@ -92,6 +95,29 @@ class YouthBudgetApp extends StatelessWidget {
     required this.showOnboarding,
     required this.hasSession,
   });
+
+  @override
+  State<YouthBudgetApp> createState() => _YouthBudgetAppState();
+}
+
+class _YouthBudgetAppState extends State<YouthBudgetApp> {
+  @override
+  void initState() {
+    super.initState();
+    _setupAuthListener();
+  }
+  
+  void _setupAuthListener() {
+    SupabaseService.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      
+      if (event == AuthChangeEvent.passwordRecovery) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => const UpdatePasswordScreen()),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +141,7 @@ class YouthBudgetApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Balanceer',
+        navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         locale: const Locale('ar'),
@@ -130,10 +157,10 @@ class YouthBudgetApp extends StatelessWidget {
   }
   
   Widget _getInitialScreen() {
-    if (showOnboarding) {
+    if (widget.showOnboarding) {
       return const OnboardingScreen();
     }
-    if (hasSession) {
+    if (widget.hasSession) {
       return const HomeScreen();
     }
     return const LoginScreen();

@@ -40,11 +40,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       image: 'assets/images/onboarding/analytics.png',
       color: AppTheme.accentBlue,
     ),
-    OnboardingData(
       title: 'الأمان والسحاب',
       description: 'بياناتك محفوظة بأمان ومزامنة عبر جميع أجهزتك بالسحاب.',
       image: 'assets/images/onboarding/cloud.png',
       color: AppTheme.primaryLight,
+    ),
+    OnboardingData(
+      title: 'إدارة الديون',
+      description: 'تتبع الديون المستحقة لك وعليك بسهولة، ولا تنسى حقوقك المالية.',
+      image: 'assets/images/onboarding/debt.png',
+      color: AppTheme.accentRed,
     ),
   ];
 

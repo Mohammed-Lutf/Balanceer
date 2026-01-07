@@ -382,7 +382,7 @@ class AuthService {
     try {
       await SupabaseService.client.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'balanceer://reset-password',
+        redirectTo: 'balanceer://login-callback',
       );
       return AuthResult.successWithMessage('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
     } on AuthException catch (e) {
